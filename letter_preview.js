@@ -12,7 +12,7 @@ const LetterPreview = (() => {
   const BORDER= "#dde3f0";
 
   // ── Image cache: fetched once as base64, reused on every render ─────────────
-  const _imgCache = { header: null, footer: null };
+  const _imgCache = { header: null, footer: null, watermark: null };
 
   async function _toBase64(url) {
     const res  = await fetch(url);
@@ -30,12 +30,14 @@ const LetterPreview = (() => {
    * network requests — all images are inlined as base64 data URIs.
    */
   async function preloadImages() {
-    const [header, footer] = await Promise.all([
+    const [header, footer, watermark] = await Promise.all([
       _toBase64("/gk_header.jpeg"),
       _toBase64("/gk_footer.jpeg"),
+      _toBase64("/watermark.jpeg"),
     ]);
-    _imgCache.header = header;
-    _imgCache.footer = footer;
+    _imgCache.header    = header;
+    _imgCache.footer    = footer;
+    _imgCache.watermark = watermark;
   }
 
   function fmtDate(val) {
@@ -115,20 +117,7 @@ const LetterPreview = (() => {
 
   <!-- CONTENT -->
   <div class="content">
-    <!-- Hibiscus watermark (faint) -->
-    <svg class="wm" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(0   150 165)"/>
-      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(45  150 165)"/>
-      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(90  150 165)"/>
-      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(135 150 165)"/>
-      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(180 150 165)"/>
-      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(225 150 165)"/>
-      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(270 150 165)"/>
-      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(315 150 165)"/>
-      <line x1="150" y1="90" x2="150" y2="275" stroke="#922" stroke-width="4"/>
-      <ellipse cx="128" cy="188" rx="22" ry="9" fill="#922" transform="rotate(-35 128 188)"/>
-      <ellipse cx="172" cy="205" rx="22" ry="9" fill="#922" transform="rotate(35 172 205)"/>
-    </svg>
+    <img class="wm" src="${_imgCache.watermark || '/watermark.jpeg'}" alt=""/>
     ${bodyHtml}
   </div>
 

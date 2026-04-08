@@ -753,7 +753,7 @@
               <iframe
                 class="editor-preview-iframe"
                 id="editorPreviewFrame"
-                sandbox="allow-same-origin"
+                sandbox="allow-same-origin allow-scripts"
                 onload="
                   document.getElementById(
                     'editorPreviewLoading',
@@ -795,6 +795,9 @@
     <script src="/api.js"></script>
     <script src="/letter_preview.js"></script>
     <script>
+      // Fetch header, footer, watermark once as base64 — zero image requests on every preview render after this
+      LetterPreview.preloadImages().catch(console.error);
+
       const user = requireAuth("recruiter");
       if (user) document.getElementById("navUser").textContent = user.full_name;
 
@@ -1897,7 +1900,7 @@
             <iframe
               class="pv-iframe"
               id="pvFrame"
-              sandbox="allow-same-origin"
+              sandbox="allow-same-origin allow-scripts"
               onload="
                 document.getElementById('pvLoading').style.display = 'none'
               "
