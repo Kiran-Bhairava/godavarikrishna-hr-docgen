@@ -131,7 +131,7 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
     d  = form_data
     st = _styles()
 
-    designation   = d.get("designation", "")
+    designation    = d.get("designation", "")
     monthly_salary = d.get("monthly_salary", "")
     monthly_words  = d.get("monthly_salary_words", "")
     yearly_words   = d.get("yearly_salary_words", "")
@@ -139,20 +139,6 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
         yearly = int(float(str(monthly_salary))) * 12
     except (ValueError, TypeError):
         yearly = 0
-
-    def _n(k):
-        try: return int(float(str(d.get(k, 0) or 0)))
-        except: return 0
-
-    basic   = _n("basic")
-    hra     = _n("hra")
-    convey  = _n("conveyance_allowance")
-    spl     = _n("special_allowance")
-    gross   = basic + hra + convey + spl
-    emp_pf  = _n("employer_pf")
-    ctc     = gross + emp_pf
-
-    def _fmt(v): return f"{v:,}" if v else ""
 
     story = [
         Paragraph("LETTER OF EMPLOYMENT", st["heading"]),
@@ -167,7 +153,7 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
             f"In continuation of our discussions on possible employment with M/s Godavari Krishna "
             f"Co-Op Society Limited Vijayawada, we are pleased to make you an offer as "
             f"<b>{designation}</b> Initially as per the norms fixed in the Appointment letter and "
-            f"Duty list. Your complete appointment letter will be processed on the date of joining "
+            f"Duty list.  Your complete appointment letter will be processed on the date of joining "
             f"post completion of your joining formalities with Godavari Krishna Co-Operative Society Limited.",
             st["body"]),
         Paragraph(
@@ -176,13 +162,13 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
             f"(in words Rupees <b>{yearly_words}</b> only) per annum.",
             st["body"]),
         Paragraph(
-            "<i>(Your remuneration details are attached in <b>Annexure - II</b> for your reference).</i>",
+            "<i>(Your remuneration details are attached in <b>Annexure - I</b> for your reference).</i>",
             st["italic"]),
         Paragraph(
             "It is mandatory to achieve your monthly set target of business given by your superior, "
             "to justify your monthly fixed pay. Your career with us is based on your performance and "
             "achievement of the set business goals and Objectives of the Organization. As discussed "
-            "with you during your interview, your \'Salary / Position\' or maybe both will be revised "
+            "with you during your interview, your 'Salary / Position' or maybe both will be revised "
             "after the first 6 months after you join, such revision shall be purely based on the level "
             "of your performance in these first 6 months.",
             st["body"]),
@@ -201,22 +187,21 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
         _S(3),
     ]
 
-    # Required Documents table — matches new draft format
     col1 = [
         "Aadhaar Card & PAN Card.",
         "3 Passport Size Photos (White Background).",
         "Academic Certificates: SSC, Inter, Degree & PG if any.",
-        "Police Verification Certificate (15 Days will be given; can be obtained through E Seva).",
-        "Nominee Passport Size Photo, Aadhaar Card & PAN Card (For PF & ESI).",
-        "PF service history & PF passbook Statement (Available in UAN Login).",
+        "Police Verification Certificate\n(15 Days will be given; can be obtained through E Seva).",
+        "Nominee Aadhaar Card & PAN Card\n(For PF & ESI).",
+        "PF service history & PF passbook Statement\n(Available in UAN Login).",
     ]
     col2 = [
         "2 Nationalised Bank Cheques.",
-        "Bank A/C Passbook Xerox (Front Page) or Cancelled Cheque.",
         "Previous Employment Offer Letters.",
-        "Pay Slips: Latest 3 Months and Salary Account Statement.",
+        "Pay Slips: Latest 3 Months and\nSalary Account Statement.",
         "Relieving Letter.",
-        "Physical fitness certificate by Govt. physician.",
+        "Physical fitness certificate by\nGovt. physician.",
+        "",
     ]
     th_style = ParagraphStyle("th", fontName="Helvetica-Bold", fontSize=10.5, alignment=TA_CENTER)
     tdata = [[Paragraph("Required Documents", th_style), ""]]
@@ -248,21 +233,20 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
             st["body"]),
         _S(6),
         HRFlowable(width=CW, thickness=0.5, color=colors.HexColor("#1F3864"), spaceBefore=2, spaceAfter=6),
-        Paragraph("Annexure-I", st["annhead"]),
+        Paragraph("Annexure - I", st["annhead"]),
         _S(2),
     ]
 
-    # Annexure-I — candidate details (new format: Cadre + Scale instead of Grade + Father Name)
     adata = [
         [Paragraph("<b>Name</b>",          st["small"]), Paragraph(d.get("full_name", ""),               st["small"])],
         [Paragraph("<b>Designation</b>",   st["small"]), Paragraph(designation,                           st["small"])],
-        [Paragraph("<b>Cadre</b>",         st["small"]), Paragraph(d.get("cadre", ""),                    st["small"])],
-        [Paragraph("<b>Scale</b>",         st["small"]), Paragraph(d.get("scale", ""),                    st["small"])],
+        [Paragraph("<b>Grade</b>",         st["small"]), Paragraph(d.get("grade", ""),                    st["small"])],
         [Paragraph("<b>Department</b>",    st["small"]), Paragraph(d.get("department", ""),               st["small"])],
         [Paragraph("<b>Date of Birth</b>", st["small"]), Paragraph(_fmt_date(d.get("date_of_birth", "")), st["small"])],
+        [Paragraph("<b>Father Name</b>",   st["small"]), Paragraph(d.get("father_name", ""),              st["small"])],
     ]
-    ann1_table = Table(adata, colWidths=[CW * 0.32, CW * 0.68])
-    ann1_table.setStyle(TableStyle([
+    ann_table = Table(adata, colWidths=[CW * 0.32, CW * 0.68])
+    ann_table.setStyle(TableStyle([
         ("BOX",           (0, 0), (-1, -1), 0.7, colors.HexColor("#1F3864")),
         ("INNERGRID",     (0, 0), (-1, -1), 0.4, colors.HexColor("#BDC7E0")),
         ("BACKGROUND",    (0, 0), (0, -1),  colors.HexColor("#F2F5FB")),
@@ -273,48 +257,9 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
     ]))
 
     story += [
-        ann1_table,
-        _S(6),
-        HRFlowable(width=CW, thickness=0.5, color=colors.HexColor("#1F3864"), spaceBefore=2, spaceAfter=6),
-        Paragraph("Annexure-II", st["annhead"]),
-        _S(2),
-    ]
-
-    # Annexure-II — CTC breakdown table (3 columns: Component / Monthly / Annual)
-    th3 = ParagraphStyle("th3", fontName="Helvetica-Bold", fontSize=10, alignment=TA_CENTER)
-    salary_rows = [
-        [Paragraph("<b>Pay Component</b>", th3), Paragraph("<b>Monthly Amount</b>", th3), Paragraph("<b>Annual Amount</b>", th3)],
-        [Paragraph("<b>Fixed</b>",         st["small"]), Paragraph(f"<b>{_fmt(int(float(str(monthly_salary or 0))))}</b>", st["small"]), Paragraph(f"<b>{_fmt(yearly)}</b>", st["small"])],
-        [Paragraph("Basic",                st["small"]), Paragraph(_fmt(basic),    st["small"]), Paragraph(_fmt(basic*12),   st["small"])],
-        [Paragraph("HRA",                  st["small"]), Paragraph(_fmt(hra),      st["small"]), Paragraph(_fmt(hra*12),     st["small"])],
-        [Paragraph("Conveyance Allowance", st["small"]), Paragraph(_fmt(convey),   st["small"]), Paragraph(_fmt(convey*12),  st["small"])],
-        [Paragraph("Special Allowance",    st["small"]), Paragraph(_fmt(spl),      st["small"]), Paragraph(_fmt(spl*12),     st["small"])],
-        [Paragraph("<b>Gross Salary</b>",  st["small"]), Paragraph(f"<b>{_fmt(gross)}</b>",  st["small"]), Paragraph(f"<b>{_fmt(gross*12)}</b>",  st["small"])],
-        [Paragraph("Employer PF",          st["small"]), Paragraph(_fmt(emp_pf),   st["small"]), Paragraph(_fmt(emp_pf*12),  st["small"])],
-        [Paragraph("<b>CTC</b>",           st["small"]), Paragraph(f"<b>{_fmt(ctc)}</b>",    st["small"]), Paragraph(f"<b>{_fmt(ctc*12)}</b>",    st["small"])],
-    ]
-    c1 = CW * 0.45; c2 = CW * 0.275; c3 = CW * 0.275
-    ann2_table = Table(salary_rows, colWidths=[c1, c2, c3])
-    ann2_table.setStyle(TableStyle([
-        ("BACKGROUND",    (0, 0), (-1, 0),  colors.HexColor("#1F3864")),
-        ("TEXTCOLOR",     (0, 0), (-1, 0),  colors.white),
-        ("BACKGROUND",    (0, 2), (-1, 2),  colors.HexColor("#F2F5FB")),
-        ("BACKGROUND",    (0, 4), (-1, 4),  colors.HexColor("#F2F5FB")),
-        ("BACKGROUND",    (0, 6), (-1, 6),  colors.HexColor("#D9E1F2")),
-        ("BACKGROUND",    (0, 8), (-1, 8),  colors.HexColor("#D9E1F2")),
-        ("BOX",           (0, 0), (-1, -1), 0.7, colors.HexColor("#1F3864")),
-        ("INNERGRID",     (0, 0), (-1, -1), 0.4, colors.HexColor("#BDC7E0")),
-        ("ALIGN",         (1, 0), (-1, -1), "CENTER"),
-        ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
-        ("TOPPADDING",    (0, 0), (-1, -1), 5),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-        ("LEFTPADDING",   (0, 0), (-1, -1), 8),
-    ]))
-
-    story += [
-        ann2_table,
+        ann_table,
         _S(4),
-        Paragraph("<b>*NOTE:</b> PF, ESI, and Professional Tax will be deducted as applicable.", st["note"]),
+        Paragraph("<b>NOTE:</b> PF, ESI, and Professional Tax will be deducted as applicable.", st["note"]),
     ]
 
     doc.build(story)
@@ -346,6 +291,29 @@ def _build_appointment_letter(form_data: dict, date_str: str) -> bytes:
     pt      = _n("pt_deduction")
     net     = gross - pf - esi - pt
 
+    # Acceptance block style
+    acc_style = ParagraphStyle("acc", fontName="Helvetica", fontSize=10, leading=15, leftIndent=8, spaceAfter=4)
+    acc_bold  = ParagraphStyle("accb", fontName="Helvetica-Bold", fontSize=10, leading=15, leftIndent=8, spaceAfter=4)
+    box_ts    = TableStyle([
+        ("BOX",        (0, 0), (-1, -1), 0.8, colors.HexColor("#1F3864")),
+        ("TOPPADDING", (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 10),
+    ])
+
+    def acceptance_block():
+        inner = [
+            Paragraph("<b>ACCEPTANCE</b>", acc_bold),
+            Paragraph(f"I <b>{d.get('full_name', '')},</b> agree and accept the terms and conditions as contained in the Letter of Appointment. Signed and accepted.", acc_style),
+            Paragraph(f"<b>Date: {date_str} &nbsp;&nbsp;&nbsp; Signature: _______________________</b>", acc_style),
+            Paragraph(f"<b>Place: {d.get('branch', '')} &nbsp;&nbsp;&nbsp; (Name in BLOCK Letters): _______________________</b>", acc_style),
+        ]
+        t = Table([[inner]], colWidths=[CW])
+        t.setStyle(box_ts)
+        return t
+
+    body_style = ParagraphStyle("body2", fontName="Helvetica", fontSize=10.5, leading=16, alignment=TA_JUSTIFY, spaceAfter=7)
+
     story = [
         Paragraph("LETTER OF APPOINTMENT", st["heading"]),
         HRFlowable(width=CW, thickness=0.5, color=colors.HexColor("#1F3864"), spaceAfter=8),
@@ -353,14 +321,12 @@ def _build_appointment_letter(form_data: dict, date_str: str) -> bytes:
         Paragraph(f"<b>Date:</b> {date_str}", st["normal"]),
         _S(2),
         Paragraph(f"<b>Mr./Ms. {d.get('full_name', '')},</b>", st["salute"]),
-        Paragraph(f"S/o {d.get('father_name', '')}", st["salute"]),
+        Paragraph(f"S/o {d.get('father_name', '')},", st["salute"]),
         Paragraph(d.get("address", ""), st["salute"]),
         _S(2),
         Paragraph(f"<b>Dear {d.get('full_name', '')},</b>", st["salute"]),
         _S(1),
-        Paragraph(
-            f"Employee Code - {d.get('employee_code', '')} / Branch - {d.get('branch', '')}",
-            st["normal"]),
+        Paragraph(f"<b>Employee Code – {d.get('employee_code', '')} / Branch – {d.get('branch', '')}</b>", st["normal"]),
         _S(2),
         Paragraph(
             f"We are pleased to appoint you as <b>{d.get('designation', '')}</b> post our recent discussions and meetings. "
@@ -381,20 +347,73 @@ def _build_appointment_letter(form_data: dict, date_str: str) -> bytes:
             "of the appointment and the terms and conditions as contained therein, you are advised to sign the counterpart "
             "of this letter of appointment and return the same to the HR Department.",
             st["body"]),
-        _S(4),
+        _S(3),
         Paragraph("Yours faithfully,", st["normal"]),
+        _S(5),
+        acceptance_block(),
         _S(6),
-        _dual_sign_table(CW, st),
+        HRFlowable(width=CW, thickness=0.5, color=colors.HexColor("#1F3864"), spaceBefore=2, spaceAfter=6),
+        Paragraph("ANNEXURE - I", st["annhead"]),
+        _S(2),
+        Paragraph("The terms and conditions of your employment are as follows:", st["normal"]),
+        _S(3),
+        Paragraph("<b>Appointment</b>", body_style),
+        Paragraph("1. Your appointment is subject to verification of your credentials, testimonials, and other particulars. In case, the information provided by you is found to be incorrect, your appointment is liable to be terminated forthwith without any notice. This offer is subject to: (a) Submission of copies of your certificates and testimonials; (b) Three passport-size photographs; (c) Last three months salary slips and relieving letter; (d) Submission of two acceptable professional references.", body_style),
+        Paragraph("2. Your appointment is subject to your being medically fit. If for any reason you are unable to attend work for 180 days in the preceding twelve months, or found medically unfit, you are liable to be discharged from services.", body_style),
+        Paragraph("3. The Society reserves its right to carry out formal/informal checks of your credentials with former employers or any other third parties.", body_style),
+        Paragraph("<b>Probation and Confirmation</b>", body_style),
+        Paragraph("4. You shall be on training for 6 Months and on probation for the next 6 Months, for a total of 12 months from date of Joining.", body_style),
+        Paragraph("5. At the end of the probation period, your services may be confirmed in writing at the sole discretion of the Society.", body_style),
+        Paragraph("6. The Society reserves its right to extend the probation period for a further 6 months if your services are found to be unsatisfactory.", body_style),
+        Paragraph("7. You are required to perform your services as per work assigned and achieve targets communicated to you from time to time.", body_style),
+        Paragraph("<b>Code of Conduct</b>", body_style),
+        Paragraph("8. On your employment, you shall devote your full time and attention to your duties. You shall render services exclusively to the Society and shall not engage in any outside activity without written permission of the Society.", body_style),
+        Paragraph("9. You shall use your best endeavor to promote the interest of the Society. Your conduct shall not damage the interest of the Society.", body_style),
+        Paragraph("10. Your appointment is subject to the Society's Rules and Regulations, Code of Conduct, Policies, and existing service conditions as contained in the HR Handbook.", body_style),
+        Paragraph("<b>Working Hours</b>", body_style),
+        Paragraph("The working hours are from 9.30 a.m. to 6.30 p.m., Mondays to Saturdays, or such other hours as informed by the Management from time to time.", body_style),
+        Paragraph("<b>Transfer</b>", body_style),
+        Paragraph("11. Transfer is an incident and condition of service. Your services are liable to be transferred anywhere in the Society's Jurisdiction area at the sole discretion of the Society.", body_style),
+        Paragraph("12. In the event of failure to report to duty at the transfer location within 3 days, the Society reserves its right to terminate your services without any notice or notice pay.", body_style),
+        Paragraph("<b>Resignation</b>", body_style),
+        Paragraph("13. You may resign during the training/probation period by giving 2 months' written notice or paying 2 months' salary instead of the notice period.", body_style),
+        Paragraph("14. Upon confirmation, you may resign by giving not less than 2 months written notice or paying 2 months' Notice pay instead of the notice period.", body_style),
+        Paragraph("<b>Termination</b>", body_style),
+        Paragraph("15. The Society reserves its right to terminate your services during the probation period if your performance is found unsatisfactory, by giving 30 days' notice.", body_style),
+        Paragraph("16. Upon confirmation, your services may be terminated by written notice of not less than 1 month or by paying Notice pay in lieu of notice period.", body_style),
+        Paragraph("17. Your services may be terminated forthwith without notice if: (a) information submitted is found incorrect; (b) any act of dishonesty, misconduct or neglect of duty; (c) on becoming insolvent; (d) misconduct that may damage the reputation of the Society; (e) unauthorized concurrent employment.", body_style),
+        Paragraph("<b>Confidential Information</b>", body_style),
+        Paragraph("18. You shall keep all information received in connection with employment strictly confidential and shall not divulge or communicate the same to any person without written approval from the Society.", body_style),
+        Paragraph("<b>Intellectual Property Rights</b>", body_style),
+        Paragraph("19. All written work or inventions made during your engagement shall inure exclusively to the benefit of the Society. You shall not claim any proprietary interest in such inventions, discoveries, or improvements.", body_style),
+        Paragraph("<b>Non-Solicitation</b>", body_style),
+        Paragraph("20. Post termination of your services, you shall not solicit any of the clients or employees of the Society. This clause survives the termination of your services.", body_style),
+        Paragraph("<b>Territorial Jurisdiction</b>", body_style),
+        Paragraph("This letter of appointment is subject to the exclusive territorial jurisdiction of the Courts in Vijayawada.", body_style),
+        _S(3),
+        Paragraph("If you are willing to agree with the conditions outlined in this Letter of Appointment, please signify your receipt and acceptance and return a copy to HR.", body_style),
+        Paragraph("Yours faithfully,", st["normal"]),
+        _S(4),
+        acceptance_block(),
         _S(8),
         HRFlowable(width=CW, thickness=0.5, color=colors.HexColor("#1F3864"), spaceBefore=2, spaceAfter=6),
         Paragraph("ANNEXURE - II  (CTC Details)", st["annhead"]),
+        _S(2),
+        Paragraph(
+            f"Terms and conditions of your CTC as agreed between you and the Society are as below:",
+            st["normal"]),
+        _S(2),
+        Paragraph(f"1. Your Annual CTC will be <b>Rs. {d.get('annual_ctc', '')}/-</b> (<b>{d.get('annual_ctc_words', '')}</b> only) inclusive of all statutory payments. This would be reviewed periodically.", body_style),
+        Paragraph("2. Any other payments like incentives, commissions, or performance bonuses would be communicated separately in writing.", body_style),
+        Paragraph("3. All payments will be subject to applicable taxes and deduction of tax at source.", body_style),
+        Paragraph("4. Your salary particulars are as shown in the below table.", body_style),
         _S(2),
     ]
 
     cw4 = CW / 4
     ctc_data = [
         [Paragraph("<b>SALARY BREAK UP</b>", st["small"]), "", "", ""],
-        [Paragraph("<b>Gross Salary</b>",    st["small"]), Paragraph(f"<b>{gross}</b>", st["small"]), "", ""],
+        [Paragraph("<b>SALARY</b>",          st["small"]), Paragraph(f"<b>{gross}</b>", st["small"]), "", ""],
         [Paragraph("BASIC",          st["small"]), Paragraph(str(basic),   st["small"]),
          Paragraph("PF",             st["small"]), Paragraph(str(pf),      st["small"])],
         [Paragraph("HRA",            st["small"]), Paragraph(str(hra),     st["small"]),
@@ -425,7 +444,9 @@ def _build_appointment_letter(form_data: dict, date_str: str) -> bytes:
     story += [
         ctc_table,
         _S(4),
-        Paragraph(f"<b>Annual CTC:</b> Rs.{d.get('annual_ctc', '')}/-", st["normal"]),
+        Paragraph("Yours faithfully,", st["normal"]),
+        _S(4),
+        acceptance_block(),
         _S(2),
         Paragraph("<b>NOTE:</b> PF, ESI, and Professional Tax will be deducted as applicable.", st["note"]),
     ]
@@ -450,10 +471,10 @@ def _build_salary_increment(form_data: dict, date_str: str) -> bytes:
         _S(2),
         Paragraph(f"<b>Date:</b> {date_str}", st["normal"]),
         _S(2),
-        Paragraph(f"Mr./Ms. <b>{d.get('full_name', '')},</b>", st["salute"]),
-        Paragraph(d.get("designation", ""), st["salute"]),
+        Paragraph(f"<b>{d.get('full_name', '')},</b>", st["salute"]),
+        Paragraph(f"{d.get('designation', '')},", st["salute"]),
         Paragraph(f"{d.get('branch', '')} Branch.", st["salute"]),
-        _S(4),
+        _S(6),
         Paragraph(
             f"We Congratulate you for your hard work, enthusiasm, dedication, and continuous efforts in meeting "
             f"the organization's objectives on an efficient basis being <b>{d.get('designation', '')}</b> for the last "
@@ -466,7 +487,7 @@ def _build_salary_increment(form_data: dict, date_str: str) -> bytes:
             "We look forward for your vital contributions towards the organizational growth and wishing you all "
             "the very best for your future endeavors.",
             st["body"]),
-        _S(12),
+        _S(14),
         _dual_sign_table(CW, st),
     ]
 
@@ -485,15 +506,15 @@ def _build_promotion_letter(form_data: dict, date_str: str) -> bytes:
     eff = _fmt_date(d.get("effective_date", ""))
 
     story = [
-        Paragraph("PROMOTION &amp; SALARY INCREMENT LETTER", st["heading"]),
+        Paragraph("PROMOTION & SALARY INCREMENT LETTER", st["heading"]),
         HRFlowable(width=CW, thickness=0.5, color=colors.HexColor("#1F3864"), spaceAfter=8),
         _S(2),
         Paragraph(f"<b>Date:</b> {date_str}", st["normal"]),
         _S(2),
-        Paragraph(f"Mr./Ms. <b>{d.get('full_name', '')},</b>", st["salute"]),
-        Paragraph(d.get("current_designation", ""), st["salute"]),
+        Paragraph(f"<b>{d.get('full_name', '')},</b>", st["salute"]),
+        Paragraph(f"{d.get('current_designation', '')},", st["salute"]),
         Paragraph(f"{d.get('branch', '')} Branch.", st["salute"]),
-        _S(4),
+        _S(6),
         Paragraph(
             f"We Congratulate you for your hard work, enthusiasm, dedication, and continuous efforts in meeting "
             f"the organization's objectives on an efficient basis being <b>{d.get('current_designation', '')}</b> "
@@ -507,7 +528,7 @@ def _build_promotion_letter(form_data: dict, date_str: str) -> bytes:
             "We look forward for your vital contributions towards the organizational growth and wishing you all "
             "the very best for your future endeavors.",
             st["body"]),
-        _S(12),
+        _S(14),
         _dual_sign_table(CW, st),
     ]
 
@@ -528,22 +549,18 @@ def _build_relieving_letter(form_data: dict, date_str: str) -> bytes:
     dues_dt  = _fmt_date(d.get("dues_settled_date", ""))
 
     story = [
-        Paragraph(
-            f"<b>Ref No:</b> {d.get('ref_number', '')}"
-            f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
-            f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
-            f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
-            f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
-            f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
-            f" <b>Date:</b> {date_str}",
-            st["normal"]),
+        Table(
+            [[Paragraph(f"<b>Ref No: {d.get('ref_number', '')}</b>", st["normal"]),
+              Paragraph(f"<b>Date: {date_str}</b>", ParagraphStyle("rr", fontName="Helvetica-Bold", fontSize=10.5, alignment=1))]],
+            colWidths=[CW * 0.6, CW * 0.4]
+        ),
         _S(2),
         Paragraph("RELIEVING CUM EXPERIENCE LETTER", st["heading"]),
         HRFlowable(width=CW, thickness=0.5, color=colors.HexColor("#1F3864"), spaceAfter=8),
         _S(2),
         Paragraph("TO WHOMSOEVER IT MAY CONCERN", st["subhead"]),
         _S(4),
-        Paragraph(f"<b>Mr./Ms. {d.get('full_name', '')}</b>", st["salute"]),
+        Paragraph(f"<b>{d.get('full_name', '')}</b>", ParagraphStyle("rname", fontName="Helvetica-Bold", fontSize=12, leading=16, spaceAfter=4)),
         _S(2),
         Paragraph(
             f"This letter is to formally acknowledge and confirm the acceptance of your resignation from the "
@@ -579,7 +596,7 @@ def _build_relieving_letter(form_data: dict, date_str: str) -> bytes:
             f"As per our records, all dues and entitlements have been settled by <b>{dues_dt}</b>.",
             st["body"]),
         _S(12),
-        Paragraph("Regards,", st["normal"]),
+        Paragraph("<b>Regards,</b>", st["normal"]),
         _S(4),
         Paragraph("<b>Jeevan Meduri</b>", st["signbold"]),
         Paragraph("<b>(Chairman)</b>",    st["sign"]),

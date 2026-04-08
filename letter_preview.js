@@ -167,21 +167,6 @@ const LetterPreview = (() => {
     const monthly = d.monthly_salary || "";
     const yearly  = monthly ? (Number(monthly) * 12).toLocaleString("en-IN") : "";
 
-    // Annexure-II salary table
-    function n(k) { return Number(d[k] || 0); }
-    const basic     = n("basic");
-    const hra       = n("hra");
-    const convey    = n("conveyance_allowance");
-    const spl       = n("special_allowance");
-    const gross     = basic + hra + convey + spl;
-    const empPF     = n("employer_pf");
-    const ctc       = gross + empPF;
-    const grossAnn  = gross * 12;
-    const empPFAnn  = empPF * 12;
-    const ctcAnn    = ctc * 12;
-
-    function fmt(v) { return v ? Number(v).toLocaleString("en-IN") : ""; }
-
     return wrap(`
       <div class="doc-title">LETTER OF EMPLOYMENT</div>
       <div class="title-rule"></div>
@@ -196,11 +181,11 @@ const LetterPreview = (() => {
 
       <p>Your fixed remuneration will be INR <b>${monthly}/-</b> (in words Rupees <b>${d.monthly_salary_words || ""}</b> only) per month and INR <b>${yearly}/-</b> (in words Rupees <b>${d.yearly_salary_words || ""}</b> only) per annum.</p>
 
-      <p><i>(Your remuneration details are attached in <b>Annexure – II</b> for your reference).</i></p>
+      <p><i>(Your remuneration details are attached in <b>Annexure – I</b> for your reference).</i></p>
 
       <p>It is mandatory to achieve your monthly set target of business given by your superior, to justify your monthly fixed pay. Your career with us is based on your performance and achievement of the set business goals and Objectives of the Organization. As discussed with you during your interview, your 'Salary / Position' or maybe both will be revised after the first 6 months after you join, such revision shall be purely based on the level of your performance in these first 6 months.</p>
 
-      <p>If the Employee wants to resign from their duties/Job role within One year of their service in such case the Employee has to serve three months of Notice Period or has to pay three months of their Salary to the Society. If the Employee wants to resign from their duties/Job role after one year of their service in such case the Employee has to serve two months of Notice Period or has to pay two months of their Salary to the Society. At the time of joining, you are advised to carry your true copies of all your credentials along with the list of documents mentioned below.</p>
+      <p>If the Employee wants to resign from their duties/Job role within One year of their service in such case the Employee has to serve three months of Notice Period or has to pay three months of their Salary to the Society. If the Employee wants to resign from their duties/Job role after one year of their service in such case the Employee has to serve two months of Notice Period or has to pay two months of their Salary to the Society.</p>
 
       <p>You have to submit the following details for generating your employment with the Society.</p>
 
@@ -208,46 +193,29 @@ const LetterPreview = (() => {
         <thead><tr><th colspan="2">Required Documents</th></tr></thead>
         <tbody>
           <tr><td>Aadhaar Card &amp; PAN Card.</td><td>2 Nationalised Bank Cheques.</td></tr>
-          <tr class="row-alt"><td>3 Passport Size Photos (White Background).</td><td>Bank A/C Passbook Xerox (Front Page) or Cancelled Cheque.</td></tr>
-          <tr><td>Academic Certificates: SSC, Inter, Degree &amp; PG if any.</td><td>Previous Employment Offer Letters.</td></tr>
-          <tr class="row-alt"><td>Police Verification Certificate (15 Days will be given; can be obtained through E Seva).</td><td>Pay Slips: Latest 3 Months and Salary Account Statement.</td></tr>
-          <tr><td>Nominee Passport Size Photo, Aadhaar Card &amp; PAN Card (For PF &amp; ESI).</td><td>Relieving Letter.</td></tr>
-          <tr class="row-alt"><td>PF service history &amp; PF passbook Statement (Available in UAN Login).</td><td>Physical fitness certificate by Govt. physician.</td></tr>
+          <tr class="row-alt"><td>3 Passport Size Photos (White Background).</td><td>Previous Employment Offer Letters.</td></tr>
+          <tr><td>Academic Certificates: SSC, Inter, Degree &amp; PG if any.</td><td>Pay Slips: Latest 3 Months and Salary Account Statement.</td></tr>
+          <tr class="row-alt"><td>Police Verification Certificate (15 Days will be given; can be obtained through E Seva).</td><td>Relieving Letter.</td></tr>
+          <tr><td>Nominee Aadhaar Card &amp; PAN Card (For PF &amp; ESI).</td><td>Physical fitness certificate by Govt. physician.</td></tr>
+          <tr class="row-alt"><td>PF service history &amp; PF passbook Statement (Available in UAN Login).</td><td></td></tr>
         </tbody>
       </table>
 
       <p><i>(You should submit these details within <b>7 days</b> from the date of receipt of this OFFER.)</i></p>
       <p>This is only an offer of employment and you shall communicate your acceptance of this offer within <b>3 days</b> from the receipt thereof, failing which this offer shall stand cancelled.</p>
 
-      <div class="annex-title">Annexure-I</div>
+      <div class="annex-title">Annexure – I</div>
       <table>
         <tbody>
           <tr><td class="cell-label">Name</td><td>${d.full_name || ""}</td></tr>
           <tr class="row-alt"><td class="cell-label">Designation</td><td>${d.designation || ""}</td></tr>
-          <tr><td class="cell-label">Cadre</td><td>${d.cadre || ""}</td></tr>
-          <tr class="row-alt"><td class="cell-label">Scale</td><td>${d.scale || ""}</td></tr>
-          <tr><td class="cell-label">Department</td><td>${d.department || ""}</td></tr>
-          <tr class="row-alt"><td class="cell-label">Date of Birth</td><td>${fmtDate(d.date_of_birth)}</td></tr>
+          <tr><td class="cell-label">Grade</td><td>${d.grade || ""}</td></tr>
+          <tr class="row-alt"><td class="cell-label">Department</td><td>${d.department || ""}</td></tr>
+          <tr><td class="cell-label">Date of Birth</td><td>${fmtDate(d.date_of_birth)}</td></tr>
+          <tr class="row-alt"><td class="cell-label">Father Name</td><td>${d.father_name || ""}</td></tr>
         </tbody>
       </table>
-
-      <div class="annex-title">Annexure-II</div>
-      <table>
-        <thead>
-          <tr><th>Pay Component</th><th>Monthly Amount</th><th>Annual Amount</th></tr>
-        </thead>
-        <tbody>
-          <tr><td class="cell-label"><b>Fixed</b></td><td><b>${fmt(monthly)}</b></td><td><b>${yearly}</b></td></tr>
-          <tr class="row-alt"><td class="cell-label">Basic</td><td>${fmt(basic)}</td><td>${fmt(basic*12)}</td></tr>
-          <tr><td class="cell-label">HRA</td><td>${fmt(hra)}</td><td>${fmt(hra*12)}</td></tr>
-          <tr class="row-alt"><td class="cell-label">Conveyance Allowance</td><td>${fmt(convey)}</td><td>${fmt(convey*12)}</td></tr>
-          <tr><td class="cell-label">Special Allowance</td><td>${fmt(spl)}</td><td>${fmt(spl*12)}</td></tr>
-          <tr class="row-alt"><td class="cell-label"><b>Gross Salary</b></td><td><b>${fmt(gross)}</b></td><td><b>${fmt(grossAnn)}</b></td></tr>
-          <tr><td class="cell-label">Employer PF</td><td>${fmt(empPF)}</td><td>${fmt(empPFAnn)}</td></tr>
-          <tr class="row-alt"><td class="cell-label"><b>CTC</b></td><td><b>${fmt(ctc)}</b></td><td><b>${fmt(ctcAnn)}</b></td></tr>
-        </tbody>
-      </table>
-      <div class="note">*NOTE: PF, ESI, and Professional Tax will be deducted as applicable.</div>
+      <div class="note">NOTE: PF, ESI, and Professional Tax will be deducted as applicable.</div>
     `);
   }
 
@@ -264,7 +232,7 @@ const LetterPreview = (() => {
       <div class="date-line"><b>Date:</b> ${dateStr}</div>
       <div class="to-block">
         <b>Mr./Ms. ${d.full_name || ""},</b><br>
-        S/o ${d.father_name || ""}<br>
+        S/o ${d.father_name || ""},<br>
         ${d.address || ""}
       </div>
 
@@ -282,11 +250,81 @@ const LetterPreview = (() => {
       <p>Yours faithfully,</p>
       ${sigBlock()}
 
+      <div style="border:1px solid #1F3864;padding:12px;margin:16px 0;font-size:10pt">
+        <p style="margin-bottom:6px"><b>ACCEPTANCE</b></p>
+        <p>I <b>${d.full_name || ""},</b> agree and accept the terms and conditions as contained in the Letter of Appointment. Signed and accepted.</p>
+        <p style="margin-top:10px"><b>Date: ${dateStr} &nbsp;&nbsp;&nbsp;&nbsp; Signature: _______________</b></p>
+        <p><b>Place: ${d.branch || ""} &nbsp;&nbsp;&nbsp;&nbsp; (Name in BLOCK Letters): _______________</b></p>
+      </div>
+
+      <div class="annex-title">ANNEXURE - I</div>
+      <p>The terms and conditions of your employment are as follows:</p>
+
+      <p><b>Appointment</b></p>
+      <p>1. Your appointment is subject to verification of your credentials, testimonials, and other particulars mentioned in your application at the time of your appointment. In case, the information provided by you is found to be incorrect your appointment is liable to be terminated forthwith without any notice or notice pay in lieu thereof. This offer of appointment is subject to: (a) Submission of copies of your certificates and testimonials. (b) Three passport-size photographs. (c) Last three months' salary slips/salary certificate and relieving letter from your previous employer. (d) Submission of two acceptable professional references.</p>
+      <p>2. Your appointment is subject to your being medically fit and your retention of reasonable medical fitness during the tenure of your employment.</p>
+      <p>3. The Society reserves its right to carry out formal/informal checks of your credentials, testimonials, and other particulars mentioned in your application.</p>
+
+      <p><b>Probation and Confirmation</b></p>
+      <p>4. You shall be on training for a period of 6 Months and on probation for a period of the next 6 Months i.e., for a total period of 12 months from the date of Joining.</p>
+      <p>5. At the end of the probation period, your services may be confirmed in writing, provided your services are found to be suitable and at the sole discretion of the Society.</p>
+      <p>6. The Society reserves its right to extend the probation period, for a further term of 6 months at its sole discretion.</p>
+      <p>7. You are required to perform your services as per the work assigned and achieve such targets/results that have been determined and communicated to/by you from time to time.</p>
+
+      <p><b>Code of Conduct</b></p>
+      <p>8. On your employment with the Society, you shall devote your full business time and attention to the performance of your duties. You shall render services exclusively to the Society and shall not engage in any outside interest or activity without written permission of the Society's Board.</p>
+      <p>9. You shall use your best endeavor to promote the interest of the Society and your conduct at all times shall be such as not to damage the interest of the Society.</p>
+      <p>10. Your appointment is subject to the Society's Rules and Regulations, Code of Conduct, Policies, and existing service conditions as contained in the HR Handbook.</p>
+
+      <p><b>Working Hours</b></p>
+      <p>The working hours of the Society are from 9.30 a.m. to 6.30 p.m., from Mondays to Saturdays, or such other working hours as may be informed from time to time by the Management of the Society.</p>
+
+      <p><b>Transfer</b></p>
+      <p>11. Transfer is an incident and condition of service and your services are liable to be transferred anywhere in the Society's Jurisdiction area at the sole discretion of the Society.</p>
+      <p>12. In the event of your failure to report to duty at the location of your transfer within 3 days, the Society reserves its right to terminate your services without any notice or notice pay.</p>
+
+      <p><b>Resignation</b></p>
+      <p>13. You may resign the services of your employment with the Society at any time during the training/probation period by giving 2 months' written notice or paying 2 months' salary instead of the notice period.</p>
+      <p>14. Upon confirmation of your service, you may resign by giving not less than 2 months written notice or paying 2 months' Notice pay instead of the notice period.</p>
+
+      <p><b>Termination</b></p>
+      <p>15. The Society reserves its right to terminate your services at any time during the probation period if your performance is found to be unsatisfactory by giving 30 days' notice.</p>
+      <p>16. Upon confirmation of your service, your services may be terminated by issue of written notice of not less than 1 month or by paying Notice pay instead of notice period.</p>
+      <p>17. Your services may be terminated forthwith without notice if: (a) information submitted by you is found incorrect; (b) any act of dishonesty, disobedience, misconduct or neglect of duty; (c) on becoming insolvent; (d) any misconduct that may damage the reputation of the Society; (e) unauthorized concurrent employment.</p>
+
+      <p><b>Confidential Information</b></p>
+      <p>18. You shall keep all information received in connection with your employment strictly confidential and shall not divulge, share, or communicate the same to any person, directly or indirectly, without written approval from the Society.</p>
+
+      <p><b>Intellectual Property Rights</b></p>
+      <p>19. All written work or invention made or produced by you in connection with your activities during the period of your engagement with the Society shall inure exclusively to the benefit of the Society.</p>
+
+      <p><b>Non-Solicitation</b></p>
+      <p>20. Post the termination of your services, you shall not solicit any of the clients or employees of the Society. This clause survives the termination of your services.</p>
+
+      <p><b>Territorial Jurisdiction</b></p>
+      <p>This letter of appointment is subject to the exclusive territorial jurisdiction of the Courts in Vijayawada.</p>
+
+      <p>If you are willing to agree with the conditions outlined in this Letter of Appointment, please signify your receipt and acceptance and return a copy of this letter to HR.</p>
+      <p>Yours faithfully,</p>
+
+      <div style="border:1px solid #1F3864;padding:12px;margin:16px 0;font-size:10pt">
+        <p style="margin-bottom:6px"><b>ACCEPTANCE</b></p>
+        <p>I <b>${d.full_name || ""},</b> agree and accept all the terms and conditions mentioned in this letter of Appointment, signed and accepted here under.</p>
+        <p style="margin-top:10px"><b>Date: ${dateStr} &nbsp;&nbsp;&nbsp;&nbsp; Signature: _______________</b></p>
+        <p><b>Place: ${d.branch || ""} &nbsp;&nbsp;&nbsp;&nbsp; (Name in BLOCK Letters): _______________</b></p>
+        <p style="font-size:9pt;font-style:italic;margin-top:8px">[Note: Please initial each page of the Letter of Appointment]</p>
+      </div>
+
       <div class="annex-title">ANNEXURE - II (CTC Details)</div>
+      <p>Terms and conditions of your CTC as agreed between you and the Society are as below:</p>
+      <p>1. Your Annual CTC will be <b>Rs. ${Number(d.annual_ctc || 0).toLocaleString("en-IN")}/-</b> (<b>${d.annual_ctc_words || ""}</b> only) inclusive of all statutory payments.</p>
+      <p>2. Any other payments like incentives, commissions, or performance bonuses would be communicated separately in writing.</p>
+      <p>3. All payments will be subject to applicable taxes and deduction of tax at source.</p>
+      <p>4. Your salary particulars are as shown in the below table.</p>
       <table>
         <thead><tr><th colspan="4">SALARY BREAK UP</th></tr></thead>
         <tbody>
-          <tr><td class="cell-label" colspan="2">Gross Salary</td><td colspan="2"><b>${gross.toLocaleString("en-IN")}</b></td></tr>
+          <tr><td class="cell-label">SALARY</td><td colspan="3"><b>${gross.toLocaleString("en-IN")}</b></td></tr>
           <tr class="row-alt"><td class="cell-label">BASIC</td><td>${n("basic")}</td><td class="cell-label">PF</td><td>${n("pf_deduction")}</td></tr>
           <tr><td class="cell-label">HRA</td><td>${n("hra")}</td><td class="cell-label">ESI</td><td>${n("esi_deduction")}</td></tr>
           <tr class="row-alt"><td class="cell-label">MEDICAL</td><td>${n("medical")}</td><td class="cell-label">PT</td><td>${n("pt_deduction")}</td></tr>
@@ -295,7 +333,14 @@ const LetterPreview = (() => {
           <tr><td class="cell-label" colspan="2"><b>Total Net Salary</b></td><td colspan="2"><b>${net.toLocaleString("en-IN")}</b></td></tr>
         </tbody>
       </table>
-      <p><b>Annual CTC:</b> Rs.${Number(d.annual_ctc || 0).toLocaleString("en-IN")}/-</p>
+
+      <p>Yours faithfully,</p>
+      <div style="border:1px solid #1F3864;padding:12px;margin:16px 0;font-size:10pt">
+        <p style="margin-bottom:6px"><b>ACCEPTANCE</b></p>
+        <p>I <b>${d.full_name || ""},</b> agree and accept all the terms and conditions mentioned in this letter of Appointment, signed and accepted here under.</p>
+        <p style="margin-top:10px"><b>Date: ${dateStr} &nbsp;&nbsp;&nbsp;&nbsp; Signature: _______________</b></p>
+        <p><b>Place: ${d.branch || ""} &nbsp;&nbsp;&nbsp;&nbsp; (Name in BLOCK Letters): _______________</b></p>
+      </div>
       <div class="note">NOTE: PF, ESI, and Professional Tax will be deducted as applicable.</div>
     `);
   }
@@ -308,12 +353,12 @@ const LetterPreview = (() => {
 
       <div class="date-line"><b>Date:</b> ${dateStr}</div>
       <div class="to-block">
-        Mr./Ms. <b>${d.full_name || ""},</b><br>
-        ${d.designation || ""}<br>
+        <b>${d.full_name || ""},</b><br>
+        ${d.designation || ""},<br>
         ${d.branch || ""} Branch.
       </div>
 
-      <p>We Congratulate you for your hard work, enthusiasm, dedication, and continuous efforts in meeting the organization's objectives on an efficient basis being <b>${d.designation || ""}</b> for the last FY ${d.fy || ""}. On reviewing your performance for the last FY, as a part of Appraisal program you were granted an Increment of Rs.<b>${d.increment_amount || ""}/-</b> (Rs. <b>${d.increment_words || ""}</b>) in your salary, where your new CTC will be <b>${d.new_ctc || ""}/-</b> w.e.f <b>${fmtDate(d.effective_date)}</b>.</p>
+      <p style="margin-top:14px">We Congratulate you for your hard work, enthusiasm, dedication, and continuous efforts in meeting the organization's objectives on an efficient basis being <b>${d.designation || ""}</b> for the last FY ${d.fy || ""}. On reviewing your performance for the last FY, as a part of Appraisal program you were granted an Increment of Rs.<b>${d.increment_amount || ""}/-</b> (Rs. <b>${d.increment_words || ""}</b>) in your salary, where your new CTC will be <b>${d.new_ctc || ""}/-</b> w.e.f <b>${fmtDate(d.effective_date)}</b>.</p>
 
       <p>We look forward for your vital contributions towards the organizational growth and wishing you all the very best for your future endeavors.</p>
 
@@ -329,12 +374,12 @@ const LetterPreview = (() => {
 
       <div class="date-line"><b>Date:</b> ${dateStr}</div>
       <div class="to-block">
-        Mr./Ms. <b>${d.full_name || ""},</b><br>
-        ${d.current_designation || ""}<br>
+        <b>${d.full_name || ""},</b><br>
+        ${d.current_designation || ""},<br>
         ${d.branch || ""} Branch.
       </div>
 
-      <p>We Congratulate you for your hard work, enthusiasm, dedication, and continuous efforts in meeting the organization's objectives on an efficient basis being <b>${d.current_designation || ""}</b> for the last FY ${d.fy || ""}. On reviewing your performance for the last FY, as a part of Appraisal program you were promoted as <b>${d.new_designation || ""}</b> based at the <b>${d.branch || ""} Branch</b>, and the Management has granted an Increment of Rs.<b>${d.increment_amount || ""}/-</b> (Rs. <b>${d.increment_words || ""}</b>) in your salary, where your new CTC will be <b>${d.new_ctc || ""}/-</b> w.e.f <b>${fmtDate(d.effective_date)}</b>.</p>
+      <p style="margin-top:14px">We Congratulate you for your hard work, enthusiasm, dedication, and continuous efforts in meeting the organization's objectives on an efficient basis being <b>${d.current_designation || ""}</b> for the last FY ${d.fy || ""}. On reviewing your performance for the last FY, as a part of Appraisal program you were promoted as <b>${d.new_designation || ""}</b> based at the <b>${d.branch || ""} Branch</b>, and the Management has granted an Increment of Rs.<b>${d.increment_amount || ""}/-</b> (Rs. <b>${d.increment_words || ""}</b>) in your salary, where your new CTC will be <b>${d.new_ctc || ""}/-</b> w.e.f <b>${fmtDate(d.effective_date)}</b>.</p>
 
       <p>We look forward for your vital contributions towards the organizational growth and wishing you all the very best for your future endeavors.</p>
 
@@ -349,9 +394,9 @@ const LetterPreview = (() => {
     const duesDt   = fmtDate(d.dues_settled_date);
 
     return wrap(`
-      <div style="display:flex;justify-content:space-between;margin-bottom:14px;font-size:9.5pt">
-        <span><b>Ref No:</b> ${d.ref_number || ""}</span>
-        <span><b>Date:</b> ${dateStr}</span>
+      <div style="display:flex;justify-content:space-between;margin-bottom:14px;font-size:10pt">
+        <span><b>Ref No: ${d.ref_number || ""}</b></span>
+        <span><b>Date: ${dateStr}</b></span>
       </div>
 
       <div class="doc-title">RELIEVING CUM EXPERIENCE LETTER</div>
@@ -359,7 +404,7 @@ const LetterPreview = (() => {
 
       <p style="text-align:center;font-weight:700;letter-spacing:.04em;font-size:10.5pt">TO WHOMSOEVER IT MAY CONCERN</p>
 
-      <p><b>Mr./Ms. ${d.full_name || ""}</b></p>
+      <p style="font-size:11pt;font-weight:700;margin:14px 0 6px">Mr./Ms. ${d.full_name || ""}</p>
 
       <p>This letter is to formally acknowledge and confirm the acceptance of your resignation from the position of <b>${d.designation || ""}</b> in the <b>${d.department || ""} Department</b> at <b>${d.branch || ""}</b> of <b>Godavari ~ Krishna Co-Operative Society Limited</b>. Your last working day with the society was <b>${lastDay}</b>.</p>
 
@@ -374,8 +419,8 @@ const LetterPreview = (() => {
 
       <p>As per our records, all dues and entitlements have been settled by <b>${duesDt}</b>.</p>
 
-      <p>Regards,</p>
-      <div style="margin-top:32px">
+      <p><b>Regards,</b></p>
+      <div style="margin-top:28px">
         <div class="sig-name">Jeevan Meduri</div>
         <div class="sig-title">(Chairman)</div>
       </div>
