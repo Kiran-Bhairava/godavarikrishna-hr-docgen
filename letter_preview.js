@@ -25,19 +25,33 @@ const LetterPreview = (() => {
     });
   }
 
+  // Internal promise — set by preloadImages(), awaited by renderAsync()
+  let _readyPromise = null;
+
   /**
-   * Call ONCE at page load. After this resolves, render() produces zero image
-   * network requests — all images are inlined as base64 data URIs.
+   * Call ONCE at page load. Returns a promise; stores it internally so
+   * renderAsync() can wait for it even if called before images finish loading.
    */
-  async function preloadImages() {
-    const [header, footer, watermark] = await Promise.all([
+  function preloadImages() {
+    _readyPromise = Promise.all([
       _toBase64("/gk_header.jpeg"),
       _toBase64("/gk_footer.jpeg"),
       _toBase64("/watermark.jpeg"),
-    ]);
-    _imgCache.header    = header;
-    _imgCache.footer    = footer;
-    _imgCache.watermark = watermark;
+    ]).then(([header, footer, watermark]) => {
+      _imgCache.header    = header;
+      _imgCache.footer    = footer;
+      _imgCache.watermark = watermark;
+    });
+    return _readyPromise;
+  }
+
+  /**
+   * Async version of render — waits for images to be cached first.
+   * Use this in refreshPreview() so watermark is ALWAYS embedded.
+   */
+  async function renderAsync(doc) {
+    if (_readyPromise) await _readyPromise;
+    return render(doc);
   }
 
   function fmtDate(val) {
@@ -71,10 +85,11 @@ const LetterPreview = (() => {
   /* CONTENT */
   .content{flex:1;padding:18px 30px 20px;position:relative;overflow:hidden}
   .wm{
-    position:fixed;top:50%;left:50%;
+    position:absolute;top:50%;left:50%;
     transform:translate(-50%,-50%);
-    width:350px;height:350px;
-    opacity:0.12;pointer-events:none;z-index:0;
+    width:500px;height:500px;
+    opacity:0.55;pointer-events:none;z-index:0;
+    object-fit:contain;
   }
   .content>:not(.wm){position:relative;z-index:1}
 
@@ -367,5 +382,5 @@ const LetterPreview = (() => {
     return builder(doc.form_data || {}, dateStr);
   }
 
-  return { render, preloadImages };
+  return { render, renderAsync, preloadImages };
 })();

@@ -1245,7 +1245,9 @@
           const loading = document.getElementById("editorPreviewLoading");
           const frame = document.getElementById("editorPreviewFrame");
           loading.style.display = "flex";
-          frame.srcdoc = LetterPreview.render(liveDoc);
+          LetterPreview.renderAsync(liveDoc).then((html) => {
+            frame.srcdoc = html;
+          });
         }, 300);
       }
 
@@ -1466,7 +1468,9 @@
 
         // Render preview
         document.getElementById("pvLoading").style.display = "flex";
-        document.getElementById("pvFrame").srcdoc = LetterPreview.render(doc);
+        LetterPreview.renderAsync(doc).then((html) => {
+          document.getElementById("pvFrame").srcdoc = html;
+        });
 
         // Footer
         const footer = document.getElementById("pvFooter");
