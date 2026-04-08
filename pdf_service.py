@@ -140,30 +140,82 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
     except (ValueError, TypeError):
         yearly = 0
 
+    def _n(k):
+        try: return int(float(str(d.get(k, 0) or 0)))
+        except: return 0
+
+    basic  = _n("basic");  hra    = _n("hra")
+    convey = _n("conveyance_allowance");  spl = _n("special_allowance")
+    gross  = basic + hra + convey + spl
+    emp_pf = _n("employer_pf");  ctc = gross + emp_pf
+    def _fmt(v): return f"{v:,}" if v else ""
+
+    # ── Paragraph styles matching draft exactly ───────────────────────────────
+    # Title: CENTER, Bold, Underline
+    title_st  = ParagraphStyle("otitle", fontName="Helvetica-Bold", fontSize=12,
+                                alignment=TA_CENTER, leading=16, spaceAfter=2,
+                                underlineWidth=0.5, underline=True)
+    # Date: RIGHT, Bold
+    date_st   = ParagraphStyle("odate",  fontName="Helvetica-Bold", fontSize=10.5,
+                                alignment=2, leading=14, spaceAfter=8)
+    # "To," - LEFT, Bold, small indent
+    to_st     = ParagraphStyle("oto",    fontName="Helvetica-Bold", fontSize=10.5,
+                                leading=14, leftIndent=6, spaceAfter=1)
+    # Name line - LEFT, Bold, larger indent
+    name_st   = ParagraphStyle("oname",  fontName="Helvetica-Bold", fontSize=10.5,
+                                leading=14, leftIndent=36, spaceAfter=10)
+    # Body: JUSTIFY, left-indent ~8pt (112 twips ÷ 1440 * 72)
+    body_st   = ParagraphStyle("obody",  fontName="Helvetica", fontSize=10.5,
+                                alignment=TA_JUSTIFY, leading=17, leftIndent=6,
+                                spaceAfter=9)
+    # Italic body
+    italic_st = ParagraphStyle("oital",  fontName="Helvetica-Oblique", fontSize=10.5,
+                                alignment=TA_JUSTIFY, leading=15, leftIndent=6,
+                                spaceAfter=9)
+    # Plain LEFT (no indent) for footer lines
+    left_st   = ParagraphStyle("oleft",  fontName="Helvetica", fontSize=10,
+                                alignment=TA_LEFT, leading=15, spaceAfter=6)
+    # Annexure title: LEFT, Bold, Underline
+    ann_title_st = ParagraphStyle("oannttl", fontName="Helvetica-Bold", fontSize=11,
+                                   alignment=TA_LEFT, leading=15,
+                                   underlineWidth=0.5, underline=True, spaceAfter=4,
+                                   spaceBefore=10)
+    # Table cell: CENTER
+    ctr_st    = ParagraphStyle("octr",   fontName="Helvetica", fontSize=9.5,
+                                alignment=TA_CENTER, leading=13)
+    ctr_b_st  = ParagraphStyle("octrb",  fontName="Helvetica-Bold", fontSize=9.5,
+                                alignment=TA_CENTER, leading=13)
+    # Docs table: JUSTIFY
+    doc_st    = ParagraphStyle("odoc",   fontName="Helvetica", fontSize=9.5,
+                                alignment=TA_JUSTIFY, leading=14)
+    note_st   = ParagraphStyle("onote",  fontName="Helvetica-Bold", fontSize=9.5,
+                                alignment=TA_LEFT, leading=13, spaceBefore=4)
+
     story = [
-        Paragraph("LETTER OF EMPLOYMENT", st["heading"]),
-        HRFlowable(width=CW, thickness=0.5, color=colors.HexColor("#1F3864"), spaceAfter=8),
-        _S(2),
-        Paragraph(f"<b>Date:</b> {date_str}", st["normal"]),
-        _S(1),
-        Paragraph("To,", st["salute"]),
-        Paragraph(f"<b>Mr./Ms. {d.get('full_name', '')},</b>", st["salute"]),
-        _S(4),
+        # Title: CENTER + Underline
+        Paragraph("<u>LETTER OF EMPLOYMENT</u>", title_st),
+        HRFlowable(width=CW, thickness=1, color=colors.HexColor("#1F3864"), spaceAfter=10),
+        # Date: RIGHT
+        Paragraph(f"<b>Date: {date_str}</b>", date_st),
+        # To block
+        Paragraph("<b>To,</b>", to_st),
+        Paragraph(f"<b>Mr./Ms. {d.get('full_name', '')},</b>", name_st),
+        # Body paragraphs: JUSTIFY with left indent
         Paragraph(
             f"In continuation of our discussions on possible employment with M/s Godavari Krishna "
             f"Co-Op Society Limited Vijayawada, we are pleased to make you an offer as "
             f"<b>{designation}</b> Initially as per the norms fixed in the Appointment letter and "
-            f"Duty list.  Your complete appointment letter will be processed on the date of joining "
+            f"Duty list. Your complete appointment letter will be processed on the date of joining "
             f"post completion of your joining formalities with Godavari Krishna Co-Operative Society Limited.",
-            st["body"]),
+            body_st),
         Paragraph(
-            f"Your fixed remuneration will be INR <b>{monthly_salary}/-</b> "
-            f"(in words Rupees <b>{monthly_words}</b> only) per month and INR <b>{yearly}/-</b> "
-            f"(in words Rupees <b>{yearly_words}</b> only) per annum.",
-            st["body"]),
+            f"Your fixed remuneration will be INR <b><u>{monthly_salary}/-</u></b> "
+            f"(in words Rupees <b><u>{monthly_words}</u></b> only) per month and INR "
+            f"<b>{yearly}/-</b> (in words Rupees <b><u>{yearly_words}</u></b> only) per annum.",
+            body_st),
         Paragraph(
-            "<i>(Your remuneration details are attached in <b>Annexure - I</b> for your reference).</i>",
-            st["italic"]),
+            "<i>(Your remuneration details are attached in Annexure – II for your reference).</i>",
+            italic_st),
         Paragraph(
             "It is mandatory to achieve your monthly set target of business given by your superior, "
             "to justify your monthly fixed pay. Your career with us is based on your performance and "
@@ -171,7 +223,7 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
             "with you during your interview, your 'Salary / Position' or maybe both will be revised "
             "after the first 6 months after you join, such revision shall be purely based on the level "
             "of your performance in these first 6 months.",
-            st["body"]),
+            body_st),
         Paragraph(
             "If the Employee wants to resign from their duties/Job role within One year of their "
             "service in such case the Employee has to serve three months of Notice Period or has to "
@@ -180,92 +232,143 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
             "serve two months of Notice Period or has to pay two months of their Salary to the Society. "
             "At the time of joining, you are advised to carry your true copies of all your credentials "
             "along with the list of documents mentioned below.",
-            st["body"]),
+            body_st),
         Paragraph(
             "You have to submit the following details for generating your employment with the Society.",
-            st["normal"]),
-        _S(3),
-    ]
-
-    col1 = [
-        "Aadhaar Card & PAN Card.",
-        "3 Passport Size Photos (White Background).",
-        "Academic Certificates: SSC, Inter, Degree & PG if any.",
-        "Police Verification Certificate\n(15 Days will be given; can be obtained through E Seva).",
-        "Nominee Aadhaar Card & PAN Card\n(For PF & ESI).",
-        "PF service history & PF passbook Statement\n(Available in UAN Login).",
-    ]
-    col2 = [
-        "2 Nationalised Bank Cheques.",
-        "Previous Employment Offer Letters.",
-        "Pay Slips: Latest 3 Months and\nSalary Account Statement.",
-        "Relieving Letter.",
-        "Physical fitness certificate by\nGovt. physician.",
-        "",
-    ]
-    th_style = ParagraphStyle("th", fontName="Helvetica-Bold", fontSize=10.5, alignment=TA_CENTER)
-    tdata = [[Paragraph("Required Documents", th_style), ""]]
-    for a, b in zip(col1, col2):
-        tdata.append([Paragraph(a, st["small"]), Paragraph(b, st["small"])])
-    doc_table = Table(tdata, colWidths=[CW / 2, CW / 2])
-    doc_table.setStyle(TableStyle([
-        ("SPAN",          (0, 0), (1, 0)),
-        ("BACKGROUND",    (0, 0), (1, 0),  colors.HexColor("#D9E1F2")),
-        ("BOX",           (0, 0), (-1, -1), 0.7, colors.HexColor("#1F3864")),
-        ("INNERGRID",     (0, 0), (-1, -1), 0.4, colors.HexColor("#BDC7E0")),
-        ("VALIGN",        (0, 0), (-1, -1), "TOP"),
-        ("TOPPADDING",    (0, 0), (-1, -1), 5),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-        ("LEFTPADDING",   (0, 0), (-1, -1), 7),
-        ("RIGHTPADDING",  (0, 0), (-1, -1), 7),
-    ]))
-
-    story += [
-        doc_table,
-        _S(3),
-        Paragraph(
-            "<i>(You should submit these details within <b>7 days</b> from the date of receipt of this OFFER.)</i>",
-            st["footer"]),
-        _S(3),
-        Paragraph(
-            "This is only an offer of employment and you shall communicate your acceptance of this "
-            "offer within <b>3 days</b> from the receipt thereof, failing which this offer shall stand cancelled.",
-            st["body"]),
-        _S(6),
-        HRFlowable(width=CW, thickness=0.5, color=colors.HexColor("#1F3864"), spaceBefore=2, spaceAfter=6),
-        Paragraph("Annexure - I", st["annhead"]),
+            body_st),
         _S(2),
     ]
 
-    adata = [
-        [Paragraph("<b>Name</b>",          st["small"]), Paragraph(d.get("full_name", ""),               st["small"])],
-        [Paragraph("<b>Designation</b>",   st["small"]), Paragraph(designation,                           st["small"])],
-        [Paragraph("<b>Grade</b>",         st["small"]), Paragraph(d.get("grade", ""),                    st["small"])],
-        [Paragraph("<b>Department</b>",    st["small"]), Paragraph(d.get("department", ""),               st["small"])],
-        [Paragraph("<b>Date of Birth</b>", st["small"]), Paragraph(_fmt_date(d.get("date_of_birth", "")), st["small"])],
-        [Paragraph("<b>Father Name</b>",   st["small"]), Paragraph(d.get("father_name", ""),              st["small"])],
+    # ── Required Documents table — header CENTER, body JUSTIFY, bullet lists ──
+    th_st = ParagraphStyle("odth", fontName="Helvetica-Bold", fontSize=10.5, alignment=TA_CENTER)
+    col1_items = [
+        "• Aadhaar Card & PAN Card.",
+        "• 3 Passport Size Photos (White Background).",
+        "• Academic Certificates: SSC, Inter, Degree & PG if any.",
+        "• Police Verification Certificate (15 Days will be given; can be obtained through E Seva).",
+        "• Nominee Passport Size Photo, Aadhaar Card & PAN Card (For PF & ESI).",
+        "• PF service history & PF passbook Statement (Available in UAN Login).",
     ]
-    ann_table = Table(adata, colWidths=[CW * 0.32, CW * 0.68])
-    ann_table.setStyle(TableStyle([
-        ("BOX",           (0, 0), (-1, -1), 0.7, colors.HexColor("#1F3864")),
+    col2_items = [
+        "• 2 Nationalised Bank Cheques.",
+        "• Bank A/C Passbook Xerox (Front Page) or Cancelled Cheque.",
+        "• Previous Employment Offer Letters.",
+        "• Pay Slips: Latest 3 Months and Salary Account Statement.",
+        "• Relieving Letter.",
+        "• Physical fitness certificate by Govt. physician.",
+    ]
+    col1_para = Paragraph("<br/>".join(col1_items), doc_st)
+    col2_para = Paragraph("<br/>".join(col2_items), doc_st)
+
+    doc_tbl = Table(
+        [[Paragraph("Required Documents", th_st), ""],
+         [col1_para, col2_para]],
+        colWidths=[CW / 2, CW / 2]
+    )
+    doc_tbl.setStyle(TableStyle([
+        ("SPAN",          (0, 0), (1, 0)),
+        ("BACKGROUND",    (0, 0), (1, 0),  colors.HexColor("#1F3864")),
+        ("TEXTCOLOR",     (0, 0), (1, 0),  colors.white),
+        ("BOX",           (0, 0), (-1, -1), 0.8, colors.HexColor("#1F3864")),
         ("INNERGRID",     (0, 0), (-1, -1), 0.4, colors.HexColor("#BDC7E0")),
-        ("BACKGROUND",    (0, 0), (0, -1),  colors.HexColor("#F2F5FB")),
-        ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+        ("VALIGN",        (0, 0), (-1, -1), "TOP"),
         ("TOPPADDING",    (0, 0), (-1, -1), 6),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
         ("LEFTPADDING",   (0, 0), (-1, -1), 8),
+        ("RIGHTPADDING",  (0, 0), (-1, -1), 8),
     ]))
 
     story += [
-        ann_table,
+        doc_tbl,
+        _S(3),
+        # LEFT, no indent
+        Paragraph(
+            "(You should submit these details within <b>7 days</b> from the date of receipt of this OFFER.)",
+            left_st),
+        Paragraph(
+            "This is only an offer of employment and you shall communicate your acceptance of this "
+            "offer within <b>3 days</b> from the receipt thereof, failing which this offer shall stand cancelled.",
+            left_st),
         _S(4),
-        Paragraph("<b>NOTE:</b> PF, ESI, and Professional Tax will be deducted as applicable.", st["note"]),
+        # Annexure-I title: LEFT, Bold, Underline
+        Paragraph("<u>Annexure-I</u>", ann_title_st),
+        _S(2),
+    ]
+
+    # ── Annexure-I table: ALL CENTER ─────────────────────────────────────────
+    ann1_data = [
+        [Paragraph("Name",          ctr_st), Paragraph(d.get("full_name", ""),               ctr_st)],
+        [Paragraph("Designation",   ctr_st), Paragraph(designation,                           ctr_st)],
+        [Paragraph("Cadre",         ctr_st), Paragraph(d.get("cadre", ""),                    ctr_st)],
+        [Paragraph("Scale",         ctr_st), Paragraph(d.get("scale", ""),                    ctr_st)],
+        [Paragraph("Department",    ctr_st), Paragraph(d.get("department", ""),               ctr_st)],
+        [Paragraph("Date of Birth", ctr_st), Paragraph(_fmt_date(d.get("date_of_birth", "")), ctr_st)],
+    ]
+    ann1_tbl = Table(ann1_data, colWidths=[CW * 0.35, CW * 0.65])
+    ann1_tbl.setStyle(TableStyle([
+        ("BOX",           (0, 0), (-1, -1), 0.8, colors.HexColor("#1F3864")),
+        ("INNERGRID",     (0, 0), (-1, -1), 0.4, colors.HexColor("#BDC7E0")),
+        ("BACKGROUND",    (1, 1), (1, 1),   colors.HexColor("#F4F5F9")),
+        ("BACKGROUND",    (1, 3), (1, 3),   colors.HexColor("#F4F5F9")),
+        ("BACKGROUND",    (1, 5), (1, 5),   colors.HexColor("#F4F5F9")),
+        ("BACKGROUND",    (0, 1), (0, 1),   colors.HexColor("#F4F5F9")),
+        ("BACKGROUND",    (0, 3), (0, 3),   colors.HexColor("#F4F5F9")),
+        ("BACKGROUND",    (0, 5), (0, 5),   colors.HexColor("#F4F5F9")),
+        ("ALIGN",         (0, 0), (-1, -1), "CENTER"),
+        ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING",    (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+
+    story += [
+        ann1_tbl,
+        _S(4),
+        # Annexure-II title
+        Paragraph("<u>Annexure-II</u>", ann_title_st),
+        _S(2),
+    ]
+
+    # ── Annexure-II table: ALL CENTER, 3 cols ────────────────────────────────
+    ann2_data = [
+        [Paragraph("<b>Pay Component</b>", ctr_b_st),
+         Paragraph("<b>Monthly Amount</b>", ctr_b_st),
+         Paragraph("<b>Annual Amount</b>", ctr_b_st)],
+        [Paragraph("<b>Fixed</b>",        ctr_b_st), Paragraph(f"<b>{_fmt(int(float(str(monthly_salary or 0))))}</b>", ctr_b_st), Paragraph(f"<b>{_fmt(yearly)}</b>",       ctr_b_st)],
+        [Paragraph("Basic",               ctr_st),   Paragraph(_fmt(basic),    ctr_st), Paragraph(_fmt(basic*12),   ctr_st)],
+        [Paragraph("HRA",                 ctr_st),   Paragraph(_fmt(hra),      ctr_st), Paragraph(_fmt(hra*12),     ctr_st)],
+        [Paragraph("Conveyance Allowance",ctr_st),   Paragraph(_fmt(convey),   ctr_st), Paragraph(_fmt(convey*12),  ctr_st)],
+        [Paragraph("Special Allowance",   ctr_st),   Paragraph(_fmt(spl),      ctr_st), Paragraph(_fmt(spl*12),     ctr_st)],
+        [Paragraph("<b>Gross Salary</b>", ctr_b_st), Paragraph(f"<b>{_fmt(gross)}</b>",  ctr_b_st), Paragraph(f"<b>{_fmt(gross*12)}</b>",  ctr_b_st)],
+        [Paragraph("Employer PF",         ctr_st),   Paragraph(_fmt(emp_pf),   ctr_st), Paragraph(_fmt(emp_pf*12),  ctr_st)],
+        [Paragraph("<b>CTC</b>",          ctr_b_st), Paragraph(f"<b>{_fmt(ctc)}</b>",    ctr_b_st), Paragraph(f"<b>{_fmt(ctc*12)}</b>",    ctr_b_st)],
+    ]
+    c1 = CW * 0.42; c2 = CW * 0.29; c3 = CW * 0.29
+    ann2_tbl = Table(ann2_data, colWidths=[c1, c2, c3])
+    ann2_tbl.setStyle(TableStyle([
+        ("BACKGROUND",    (0, 0), (-1, 0),  colors.HexColor("#1F3864")),
+        ("TEXTCOLOR",     (0, 0), (-1, 0),  colors.white),
+        ("BACKGROUND",    (0, 2), (-1, 2),  colors.HexColor("#F4F5F9")),
+        ("BACKGROUND",    (0, 4), (-1, 4),  colors.HexColor("#F4F5F9")),
+        ("BACKGROUND",    (0, 7), (-1, 7),  colors.HexColor("#F4F5F9")),
+        ("BACKGROUND",    (0, 6), (-1, 6),  colors.HexColor("#D9E1F2")),
+        ("BACKGROUND",    (0, 8), (-1, 8),  colors.HexColor("#D9E1F2")),
+        ("BOX",           (0, 0), (-1, -1), 0.8, colors.HexColor("#1F3864")),
+        ("INNERGRID",     (0, 0), (-1, -1), 0.4, colors.HexColor("#BDC7E0")),
+        ("ALIGN",         (0, 0), (-1, -1), "CENTER"),
+        ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING",    (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 6),
+    ]))
+
+    story += [
+        ann2_tbl,
+        _S(4),
+        Paragraph("<b>*NOTE: PF, ESI, and Professional Tax will be deducted as applicable</b>", note_st),
     ]
 
     doc.build(story)
     return buf.getvalue()
-
-
 # ── 2. Appointment Letter ─────────────────────────────────────────────────────
 
 def _build_appointment_letter(form_data: dict, date_str: str) -> bytes:
