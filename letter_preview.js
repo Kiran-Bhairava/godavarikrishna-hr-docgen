@@ -24,7 +24,7 @@ const LetterPreview = (() => {
     return `${String(d.getDate()).padStart(2,"0")}-${String(d.getMonth()+1).padStart(2,"0")}-${d.getFullYear()}`;
   }
 
-  // ── Shared letterhead wrapper — pixel-perfect GK letterhead ─────────────────
+  // ── Shared letterhead wrapper — uses real GK header/footer images ─────────────
   function wrap(bodyHtml) {
     return `<!DOCTYPE html>
 <html>
@@ -35,28 +35,9 @@ const LetterPreview = (() => {
   body{font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:#1a1a1a;background:#fff}
   .page{width:100%;min-height:100vh;display:flex;flex-direction:column;background:#fff}
 
-  /* HEADER */
-  .lh{background:#fff;padding:8px 16px 0;display:flex;align-items:flex-start;gap:10px}
-  .lh-emblem{flex-shrink:0;width:92px;height:92px}
-  .lh-right{flex:1;min-width:0;display:flex;flex-direction:column}
-
-  .lh-certs{
-    display:flex;justify-content:flex-end;gap:20px;
-    font-size:6.8pt;font-weight:700;color:#1F3864;
-    letter-spacing:0.01em;margin-bottom:1px;
-  }
-  .lh-name{
-    font-size:20pt;font-weight:900;color:#1F3864;
-    line-height:1.1;letter-spacing:0.01em;white-space:nowrap;
-  }
-  .lh-sub-wrap{text-align:center;margin:3px 0 4px}
-  .lh-sub{
-    display:inline-block;background:#F5C518;color:#1F3864;
-    font-size:9pt;font-weight:700;font-style:italic;padding:2px 16px;
-  }
-  .lh-addr{text-align:center;font-size:8.2pt;color:#1a1a1a;margin-bottom:2px}
-  .lh-web{display:flex;justify-content:center;gap:70px;font-size:8.2pt;color:#1a1a1a;padding-bottom:5px}
-  .lh-rule{height:1.5px;background:#4a8040;width:100%}
+  /* HEADER IMAGE */
+  .lh-img{width:100%;display:block;line-height:0}
+  .lh-img img{width:100%;height:auto;display:block}
 
   /* CONTENT */
   .content{flex:1;padding:18px 30px 20px;position:relative;overflow:hidden}
@@ -64,7 +45,7 @@ const LetterPreview = (() => {
     position:absolute;top:36%;left:50%;
     transform:translate(-50%,-50%);
     width:300px;height:300px;
-    opacity:0.055;pointer-events:none;z-index:0;
+    opacity:0.15;pointer-events:none;z-index:0;
   }
   .content>:not(.wm){position:relative;z-index:1}
 
@@ -92,84 +73,28 @@ const LetterPreview = (() => {
   .sig-title{font-size:8.5pt;color:#555}
   .note{font-size:8.5pt;font-weight:700;margin-top:8px;color:#333}
 
-  /* FOOTER */
-  .lh-footer{flex-shrink:0;height:72px;position:relative;overflow:hidden}
-  .lh-footer svg{position:absolute;bottom:0;left:0;width:100%;height:100%}
+  /* FOOTER IMAGE */
+  .lh-footer-img{width:100%;display:block;line-height:0;margin-top:auto}
+  .lh-footer-img img{width:100%;height:auto;display:block}
 </style>
 </head>
 <body>
 <div class="page">
 
-  <!-- HEADER -->
-  <div class="lh">
-    <!-- Circular GK emblem -->
-    <svg class="lh-emblem" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="50" cy="50" r="47" fill="#fff" stroke="#3d7a35" stroke-width="4"/>
-      <circle cx="50" cy="50" r="42" fill="none" stroke="#3d7a35" stroke-width="1.2"/>
-      <text x="50" y="65" text-anchor="middle"
-            font-family="Times New Roman,Times,serif"
-            font-size="38" font-weight="900" font-style="italic" fill="#1F3864">gk</text>
-      <path id="arcT" d="M 9,50 A 41,41 0 0,1 91,50" fill="none"/>
-      <text font-family="Arial,sans-serif" font-size="7.5" font-weight="700"
-            fill="#3d7a35" letter-spacing="1.5">
-        <textPath href="#arcT" startOffset="3%">GODAVARI ~ KRISHNA</textPath>
-      </text>
-      <path id="arcB" d="M 15,58 A 37,37 0 0,0 85,58" fill="none"/>
-      <text font-family="Arial,sans-serif" font-size="7" font-weight="700"
-            fill="#3d7a35" letter-spacing="2">
-        <textPath href="#arcB" startOffset="22%">~ KRISHNA ~</textPath>
-      </text>
-    </svg>
-
-    <!-- Text block -->
-    <div class="lh-right">
-      <div class="lh-certs">
-        <span>AP MAC Society ACT 1995</span>
-        <span>ISO Certified 9001-2015</span>
-        <span>Regd No.: AMC/KNA/DCO/2019/122</span>
-      </div>
-      <div class="lh-name">GODAVARI &nbsp;~&nbsp; KRISHNA CO-OP SOCIETY LTD.,</div>
-      <div class="lh-sub-wrap">
-        <span class="lh-sub">(Mutually Aided Thrift and Credit Society)</span>
-      </div>
-      <div class="lh-addr">
-        # 9-61-13, BRP Road, Islam Pet, VIjayawada-520001.&nbsp;&nbsp;&nbsp;Ph : 0866-2566334, Toll free No. : 1800 8899570
-      </div>
-      <div class="lh-web">
-        <span>www.godavarikrishna.com</span>
-        <span>admin@godavarikrishna.com</span>
-      </div>
-    </div>
+  <!-- HEADER: real GK letterhead image -->
+  <div class="lh-img">
+    <img src="/gk_header.jpeg" alt="Godavari Krishna Co-Op Society Letterhead"/>
   </div>
-  <div class="lh-rule"></div>
 
   <!-- CONTENT -->
   <div class="content">
-    <!-- Hibiscus watermark (faint pink) -->
-    <svg class="wm" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(0   150 165)"/>
-      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(45  150 165)"/>
-      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(90  150 165)"/>
-      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(135 150 165)"/>
-      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(180 150 165)"/>
-      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(225 150 165)"/>
-      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(270 150 165)"/>
-      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(315 150 165)"/>
-      <line x1="150" y1="90" x2="150" y2="275" stroke="#922" stroke-width="4"/>
-      <ellipse cx="128" cy="188" rx="22" ry="9" fill="#922" transform="rotate(-35 128 188)"/>
-      <ellipse cx="172" cy="205" rx="22" ry="9" fill="#922" transform="rotate(35 172 205)"/>
-    </svg>
+    <img class="wm" src="/watermark.jpeg" alt="Watermark"/>
     ${bodyHtml}
   </div>
 
-  <!-- FOOTER: navy wave + gold stripe -->
-  <div class="lh-footer">
-    <svg viewBox="0 0 1000 72" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M0,40 Q160,16 380,28 Q520,35 620,25 L620,36 Q520,46 380,38 Q160,28 0,52 Z"
-            fill="#F5C518"/>
-      <path d="M0,72 L0,44 Q120,20 280,30 Q450,42 620,24 Q760,10 900,27 Q960,34 1000,30 L1000,72 Z"
-            fill="#1F3864"/>
-    </svg>
+  <!-- FOOTER: real GK wave strip image -->
+  <div class="lh-footer-img">
+    <img src="/gk_footer.jpeg" alt=""/>
   </div>
 
 </div>
