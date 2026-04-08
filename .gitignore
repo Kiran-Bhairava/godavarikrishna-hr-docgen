@@ -9,5 +9,4 @@ __pycache__
 db.sqlite3
 *.log
 *.pot
-generated_pdfs
-gk_letter_head.pdf
+
