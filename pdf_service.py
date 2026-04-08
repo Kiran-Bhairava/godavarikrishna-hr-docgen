@@ -12,6 +12,7 @@ from reportlab.platypus.frames import Frame
 from reportlab.platypus.doctemplate import BaseDocTemplate, PageTemplate
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
 from reportlab.pdfgen import canvas as rl_canvas
+from reportlab.lib.utils import ImageReader
 from pypdf import PdfReader, PdfWriter
 
 W, H = A4
@@ -19,6 +20,14 @@ W, H = A4
 LETTERHEAD_PATH = os.getenv("LETTERHEAD_PATH", "gk_letter_head.pdf")
 WATERMARK_PATH  = os.getenv("WATERMARK_PATH",  "watermark.jpeg")
 PDF_OUTPUT_DIR  = os.getenv("PDF_OUTPUT_DIR",  "/tmp/generated_pdfs")
+
+# ── Module-level cache — built once on first use, reused on every request ──
+# Avoids re-reading files and re-rendering the mask PDF on every generation.
+_CACHE = {
+    "lh_bytes":    None,   # raw letterhead PDF bytes
+    "mask_bytes":  None,   # rendered mask+watermark PDF bytes
+    "wm_reader":   None,   # ImageReader for watermark.jpeg
+}
 
 
 # ── Shared helpers ────────────────────────────────────────────────────────────
@@ -56,27 +65,26 @@ def _fmt_date(val: str) -> str:
 
 
 def _make_white_mask_pdf() -> bytes:
-    """White mask over content area + watermark.jpeg centered on top.
-    Matches the live preview: faint hibiscus flower centered in the body.
-    The image is already pre-faded, drawn at alpha 0.55 to match browser preview.
-    """
+    """White mask + watermark. Uses cached ImageReader — JPEG decoded once only."""
+    # Cache the watermark ImageReader — decodes JPEG once for the process lifetime
+    if _CACHE["wm_reader"] is None and os.path.exists(WATERMARK_PATH):
+        _CACHE["wm_reader"] = ImageReader(WATERMARK_PATH)
+
     buf = io.BytesIO()
     c = rl_canvas.Canvas(buf, pagesize=A4)
 
-    # White mask — wipes the letterhead's own background in the content band
-    mask_y      = 128   # pts from bottom (45mm footer)
-    mask_height = 572   # pts content area
+    mask_y      = 128
+    mask_height = 572
     c.setFillColorRGB(1, 1, 1)
     c.rect(30, mask_y, W - 60, mask_height, fill=1, stroke=0)
 
-    # Draw watermark.jpeg centered in the content area — matches live preview
-    if os.path.exists(WATERMARK_PATH):
-        wm_size = 340   # pts (~120mm), visually matches preview
+    if _CACHE["wm_reader"] is not None:
+        wm_size = 340
         wm_x    = (W - wm_size) / 2
         wm_y    = mask_y + (mask_height - wm_size) / 2
         c.saveState()
         c.setFillAlpha(0.55)
-        c.drawImage(WATERMARK_PATH, wm_x, wm_y,
+        c.drawImage(_CACHE["wm_reader"], wm_x, wm_y,
                     width=wm_size, height=wm_size,
                     mask="auto", preserveAspectRatio=True)
         c.restoreState()
@@ -547,29 +555,27 @@ _BUILDERS = {
 
 def _merge_with_letterhead(content_bytes: bytes, letterhead_path: str) -> bytes:
     """Merges content PDF with letterhead on every page.
-    
-    Process for each page:
-    1. Get fresh copy of letterhead page
-    2. Apply white mask to block watermark in content area
-    3. Merge content page on top
+    Letterhead bytes and mask PDF are cached at module level — read/rendered once.
     """
-    mask_bytes     = _make_white_mask_pdf()
-    lh_reader      = PdfReader(letterhead_path)
-    mask_reader    = PdfReader(io.BytesIO(mask_bytes))
-    content_reader = PdfReader(io.BytesIO(content_bytes))
+    # Cache letterhead bytes — avoids disk read on every call
+    if _CACHE["lh_bytes"] is None:
+        with open(letterhead_path, "rb") as f:
+            _CACHE["lh_bytes"] = f.read()
+
+    # Cache mask+watermark PDF — avoids re-rendering on every call
+    if _CACHE["mask_bytes"] is None:
+        _CACHE["mask_bytes"] = _make_white_mask_pdf()
+
+    lh_bytes_cached = _CACHE["lh_bytes"]
+    mask_reader     = PdfReader(io.BytesIO(_CACHE["mask_bytes"]))
+    content_reader  = PdfReader(io.BytesIO(content_bytes))
 
     writer = PdfWriter()
     for content_page in content_reader.pages:
-        # Get fresh letterhead page (not a copy - read it fresh each time)
-        lh_page = PdfReader(letterhead_path).pages[0]
-        
-        # Apply mask
+        # Fresh PdfReader per page so pypdf page objects stay independent
+        lh_page = PdfReader(io.BytesIO(lh_bytes_cached)).pages[0]
         lh_page.merge_page(mask_reader.pages[0])
-        
-        # Apply content
         lh_page.merge_page(content_page)
-        
-        # Add to output
         writer.add_page(lh_page)
 
     out = io.BytesIO()
