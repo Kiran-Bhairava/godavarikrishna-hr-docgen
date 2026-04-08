@@ -11,6 +11,33 @@ const LetterPreview = (() => {
   const MUTED = "#6b7280";
   const BORDER= "#dde3f0";
 
+  // ── Image cache: fetched once as base64, reused on every render ─────────────
+  const _imgCache = { header: null, footer: null };
+
+  async function _toBase64(url) {
+    const res  = await fetch(url);
+    const blob = await res.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload  = () => resolve(reader.result); // data:image/jpeg;base64,...
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  /**
+   * Call ONCE at page load. After this resolves, render() produces zero image
+   * network requests — all images are inlined as base64 data URIs.
+   */
+  async function preloadImages() {
+    const [header, footer] = await Promise.all([
+      _toBase64("/gk_header.jpeg"),
+      _toBase64("/gk_footer.jpeg"),
+    ]);
+    _imgCache.header = header;
+    _imgCache.footer = footer;
+  }
+
   function fmtDate(val) {
     if (!val) return "";
     // Convert YYYY-MM-DD → DD-MM-YYYY
@@ -42,10 +69,10 @@ const LetterPreview = (() => {
   /* CONTENT */
   .content{flex:1;padding:18px 30px 20px;position:relative;overflow:hidden}
   .wm{
-    position:absolute;top:36%;left:50%;
+    position:fixed;top:50%;left:50%;
     transform:translate(-50%,-50%);
-    width:300px;height:300px;
-    opacity:0.15;pointer-events:none;z-index:0;
+    width:350px;height:350px;
+    opacity:0.12;pointer-events:none;z-index:0;
   }
   .content>:not(.wm){position:relative;z-index:1}
 
@@ -83,18 +110,31 @@ const LetterPreview = (() => {
 
   <!-- HEADER: real GK letterhead image -->
   <div class="lh-img">
-    <img src="/gk_header.jpeg" alt="Godavari Krishna Co-Op Society Letterhead"/>
+    <img src="${_imgCache.header || '/gk_header.jpeg'}" alt="Godavari Krishna Co-Op Society Letterhead"/>
   </div>
 
   <!-- CONTENT -->
   <div class="content">
-    <img class="wm" src="/watermark.jpeg" alt="Watermark"/>
+    <!-- Hibiscus watermark (faint) -->
+    <svg class="wm" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(0   150 165)"/>
+      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(45  150 165)"/>
+      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(90  150 165)"/>
+      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(135 150 165)"/>
+      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(180 150 165)"/>
+      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(225 150 165)"/>
+      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(270 150 165)"/>
+      <ellipse cx="150" cy="90"  rx="26" ry="82" fill="#c33" transform="rotate(315 150 165)"/>
+      <line x1="150" y1="90" x2="150" y2="275" stroke="#922" stroke-width="4"/>
+      <ellipse cx="128" cy="188" rx="22" ry="9" fill="#922" transform="rotate(-35 128 188)"/>
+      <ellipse cx="172" cy="205" rx="22" ry="9" fill="#922" transform="rotate(35 172 205)"/>
+    </svg>
     ${bodyHtml}
   </div>
 
   <!-- FOOTER: real GK wave strip image -->
   <div class="lh-footer-img">
-    <img src="/gk_footer.jpeg" alt=""/>
+    <img src="${_imgCache.footer || '/gk_footer.jpeg'}" alt=""/>
   </div>
 
 </div>
@@ -338,5 +378,5 @@ const LetterPreview = (() => {
     return builder(doc.form_data || {}, dateStr);
   }
 
-  return { render };
+  return { render, preloadImages };
 })();

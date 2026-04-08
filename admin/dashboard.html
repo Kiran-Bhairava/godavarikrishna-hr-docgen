@@ -830,7 +830,11 @@
               <span>⏳</span>
               <span>Rendering preview...</span>
             </div>
-            <iframe class="preview-iframe" id="previewFrame"></iframe>
+            <iframe
+              class="preview-iframe"
+              id="previewFrame"
+              sandbox="allow-same-origin allow-scripts"
+            ></iframe>
           </div>
         </div>
 
@@ -890,6 +894,9 @@
     <script src="/api.js"></script>
     <script src="/letter_preview.js"></script>
     <script>
+      // Fetch header/footer images once as base64 — all renders after this are zero-network
+      LetterPreview.preloadImages().catch(console.error);
+
       const me = requireAuth("admin");
       if (me) document.getElementById("navUser").textContent = me.full_name;
 
