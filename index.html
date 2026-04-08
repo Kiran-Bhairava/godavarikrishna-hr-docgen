@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GK Offers — Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --navy: #1f3864;
+        --navy-lt: #2a4a85;
+        --gold: #f5c518;
+        --border: #dde3f0;
+        --text: #1a1f36;
+        --muted: #6b7280;
+        --radius: 10px;
+      }
+
+      body {
+        font-family: "DM Sans", sans-serif;
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        background: #f4f6fb;
+      }
+
+      /* ── Left panel ── */
+      .left {
+        background: var(--navy);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 60px;
+        position: relative;
+        overflow: hidden;
+      }
+      .left::before {
+        content: "";
+        position: absolute;
+        width: 420px;
+        height: 420px;
+        background: rgba(245, 197, 24, 0.07);
+        border-radius: 50%;
+        top: -100px;
+        right: -120px;
+      }
+      .left::after {
+        content: "";
+        position: absolute;
+        width: 280px;
+        height: 280px;
+        background: rgba(245, 197, 24, 0.05);
+        border-radius: 50%;
+        bottom: -60px;
+        left: -80px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 52px;
+      }
+      .brand-logo {
+        width: 52px;
+        height: 52px;
+        background: var(--gold);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "DM Serif Display", serif;
+        font-size: 24px;
+        color: var(--navy);
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+      .brand-name {
+        font-family: "DM Serif Display", serif;
+        font-size: 22px;
+        color: #fff;
+        line-height: 1.2;
+      }
+      .brand-name span {
+        color: var(--gold);
+      }
+      .brand-sub {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.5);
+        margin-top: 2px;
+      }
+
+      .left-headline {
+        font-family: "DM Serif Display", serif;
+        font-size: 36px;
+        color: #fff;
+        line-height: 1.25;
+        margin-bottom: 16px;
+      }
+      .left-headline span {
+        color: var(--gold);
+      }
+      .left-desc {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.6);
+        line-height: 1.7;
+        max-width: 360px;
+      }
+
+      .feature-list {
+        margin-top: 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .feature {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: rgba(255, 255, 255, 0.75);
+        font-size: 13.5px;
+      }
+      .feature-dot {
+        width: 8px;
+        height: 8px;
+        background: var(--gold);
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      /* ── Right panel ── */
+      .right {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+      }
+      .login-card {
+        background: #fff;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        box-shadow: 0 8px 40px rgba(31, 56, 100, 0.1);
+        padding: 44px 40px;
+        width: 100%;
+        max-width: 420px;
+      }
+      .login-title {
+        font-family: "DM Serif Display", serif;
+        font-size: 26px;
+        color: var(--navy);
+        margin-bottom: 6px;
+      }
+      .login-subtitle {
+        font-size: 13.5px;
+        color: var(--muted);
+        margin-bottom: 36px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+      .form-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 7px;
+      }
+      .input-wrap {
+        position: relative;
+      }
+      .input-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        font-size: 15px;
+        pointer-events: none;
+      }
+      .form-control {
+        width: 100%;
+        padding: 11px 14px 11px 40px;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        font-family: inherit;
+        font-size: 14px;
+        color: var(--text);
+        outline: none;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .form-control:focus {
+        border-color: var(--navy);
+        box-shadow: 0 0 0 3px rgba(31, 56, 100, 0.08);
+      }
+
+      .btn-login {
+        width: 100%;
+        padding: 13px;
+        background: var(--navy);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius);
+        font-family: inherit;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.18s;
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .btn-login:hover {
+        background: var(--navy-lt);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 20px rgba(31, 56, 100, 0.2);
+      }
+      .btn-login:active {
+        transform: none;
+      }
+      .btn-login:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .error-msg {
+        background: #fde8e8;
+        color: #b22a2a;
+        border-radius: var(--radius);
+        padding: 11px 14px;
+        font-size: 13px;
+        margin-bottom: 20px;
+        display: none;
+        border: 1px solid #f5c6c6;
+      }
+      .error-msg.show {
+        display: block;
+      }
+
+      .login-footer {
+        text-align: center;
+        margin-top: 28px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      /* ── Spinner ── */
+      .spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        display: none;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ── Responsive ── */
+      @media (max-width: 768px) {
+        body {
+          grid-template-columns: 1fr;
+        }
+        .left {
+          display: none;
+        }
+        .right {
+          padding: 24px;
+        }
+        .login-card {
+          padding: 32px 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Left branding panel -->
+    <div class="left">
+      <div class="brand">
+        <div class="brand-logo">GK</div>
+        <div>
+          <div class="brand-name">Godavari <span>Krishna</span></div>
+          <div class="brand-sub">Co-Operative Society Ltd.</div>
+        </div>
+      </div>
+
+      <h1 class="left-headline">
+        Offer Letter<br /><span>Management</span><br />System
+      </h1>
+      <p class="left-desc">
+        Streamline your hiring process — create, review, and approve offer
+        letters in one place.
+      </p>
+
+      <div class="feature-list">
+        <div class="feature">
+          <div class="feature-dot"></div>
+          Create offer letters with dynamic forms
+        </div>
+        <div class="feature">
+          <div class="feature-dot"></div>
+          Submit for admin approval instantly
+        </div>
+        <div class="feature">
+          <div class="feature-dot"></div>
+          Auto-generate branded PDF on approval
+        </div>
+        <div class="feature">
+          <div class="feature-dot"></div>
+          Track status across all documents
+        </div>
+      </div>
+    </div>
+
+    <!-- Right login panel -->
+    <div class="right">
+      <div class="login-card">
+        <h2 class="login-title">Welcome back</h2>
+        <p class="login-subtitle">Sign in to your account to continue</p>
+
+        <div class="error-msg" id="errorMsg"></div>
+
+        <form id="loginForm">
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <div class="input-wrap">
+              <span class="input-icon">✉</span>
+              <input
+                type="email"
+                id="email"
+                class="form-control"
+                placeholder="you@godavarikrishna.com"
+                required
+                autofocus
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="input-wrap">
+              <span class="input-icon">🔒</span>
+              <input
+                type="password"
+                id="password"
+                class="form-control"
+                placeholder="Enter your password"
+                required
+              />
+            </div>
+          </div>
+
+          <button type="submit" class="btn-login" id="loginBtn">
+            <span id="btnText">Sign In</span>
+            <div class="spinner" id="spinner"></div>
+          </button>
+        </form>
+
+        <div class="login-footer">GK Offers Management &copy; 2026</div>
+      </div>
+    </div>
+
+    <script src="/api.js"></script>
+    <script>
+      // If already logged in, redirect
+      if (getToken() && getUser()) {
+        const user = getUser();
+        window.location.href =
+          user.role === "admin"
+            ? "/admin/dashboard.html"
+            : "/recruiter/dashboard.html";
+      }
+
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const email = document.getElementById("email").value.trim();
+          const password = document.getElementById("password").value;
+          const btn = document.getElementById("loginBtn");
+          const spinner = document.getElementById("spinner");
+          const btnText = document.getElementById("btnText");
+          const errorMsg = document.getElementById("errorMsg");
+
+          // Loading state
+          btn.disabled = true;
+          spinner.style.display = "block";
+          btnText.textContent = "Signing in...";
+          errorMsg.classList.remove("show");
+
+          try {
+            const data = await login(email, password);
+            localStorage.setItem("token", data.access_token);
+
+            // Fetch user profile using relative URL
+            const me = await fetch("/auth/me", {
+              headers: { Authorization: `Bearer ${data.access_token}` },
+            }).then((r) => r.json());
+
+            localStorage.setItem("user", JSON.stringify(me));
+
+            // Redirect by role
+            window.location.href =
+              me.role === "admin"
+                ? "/admin/dashboard.html"
+                : "/recruiter/dashboard.html";
+          } catch (err) {
+            errorMsg.textContent = err.message || "Invalid email or password";
+            errorMsg.classList.add("show");
+            btn.disabled = false;
+            spinner.style.display = "none";
+            btnText.textContent = "Sign In";
+          }
+        });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GK Offers — Manage Users</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/style.css" />
+    <style>
+      .avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: var(--navy);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .avatar.recruiter {
+        background: #e8edf8;
+        color: var(--navy);
+      }
+      .user-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .toggle-btn {
+        position: relative;
+        width: 40px;
+        height: 22px;
+        background: #dde3f0;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: background 0.2s;
+        flex-shrink: 0;
+      }
+      .toggle-btn::after {
+        content: "";
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        background: #fff;
+        border-radius: 50%;
+        top: 3px;
+        left: 3px;
+        transition: transform 0.2s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+      .toggle-btn.on {
+        background: var(--green);
+      }
+      .toggle-btn.on::after {
+        transform: translateX(18px);
+      }
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 16px;
+      }
+      .form-grid .full {
+        grid-column: 1 / -1;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar">
+      <a class="navbar-brand" href="/admin/dashboard.html"
+        >GK <span class="dot">·</span> Offers</a
+      >
+      <div class="navbar-right">
+        <a
+          href="/admin/dashboard.html"
+          class="btn btn-outline btn-sm"
+          style="color: #fff; border-color: rgba(255, 255, 255, 0.3)"
+          >← Dashboard</a
+        >
+        <span class="navbar-user" id="navUser"></span>
+        <span
+          class="navbar-role"
+          style="background: var(--gold); color: var(--navy)"
+          >Admin</span
+        >
+        <button
+          class="btn btn-outline btn-sm"
+          onclick="logout()"
+          style="color: #fff; border-color: rgba(255, 255, 255, 0.3)"
+        >
+          Sign Out
+        </button>
+      </div>
+    </nav>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <div class="page-wrap">
+      <div
+        style="
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 12px;
+          margin-bottom: 24px;
+        "
+      >
+        <div>
+          <h1 class="page-title">Manage Users</h1>
+          <p class="page-subtitle">
+            Create and manage recruiter and admin accounts
+          </p>
+        </div>
+        <button class="btn btn-primary" onclick="openCreateModal()">
+          + Add User
+        </button>
+      </div>
+
+      <!-- Stats strip -->
+      <div
+        style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap"
+      >
+        <div class="stat-card" style="flex: 1; min-width: 120px">
+          <div class="stat-label">Total Users</div>
+          <div class="stat-value" id="statTotal">—</div>
+        </div>
+        <div class="stat-card" style="flex: 1; min-width: 120px">
+          <div class="stat-label">Admins</div>
+          <div class="stat-value" id="statAdmins">—</div>
+        </div>
+        <div class="stat-card" style="flex: 1; min-width: 120px">
+          <div class="stat-label">Recruiters</div>
+          <div class="stat-value" id="statRecruiters">—</div>
+        </div>
+        <div class="stat-card" style="flex: 1; min-width: 120px">
+          <div class="stat-label">Active</div>
+          <div class="stat-value approved" id="statActive">—</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span style="font-weight: 600; color: var(--navy)">All Users</span>
+          <input
+            class="form-control"
+            style="width: 220px"
+            placeholder="Search by name or email..."
+            id="searchInput"
+            oninput="renderUsers()"
+          />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Active</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody id="usersBody">
+              <tr>
+                <td colspan="5">
+                  <div class="empty">
+                    <div class="empty-icon">⏳</div>
+                    <p>Loading...</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create User Modal -->
+    <div class="modal-overlay" id="createModal">
+      <div class="modal" style="max-width: 460px">
+        <div class="modal-header">
+          <span class="modal-title">Add New User</span>
+          <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group full">
+              <label class="form-label">Full Name *</label>
+              <input
+                type="text"
+                class="form-control"
+                id="fullName"
+                placeholder="Enter full name"
+              />
+            </div>
+            <div class="form-group full">
+              <label class="form-label">Email Address *</label>
+              <input
+                type="email"
+                class="form-control"
+                id="email"
+                placeholder="name@godavarikrishna.com"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Password *</label>
+              <input
+                type="password"
+                class="form-control"
+                id="password"
+                placeholder="Set a password"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Role</label>
+              <select class="form-control" id="role">
+                <option value="recruiter">Recruiter</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" id="createBtn" onclick="createUser()">
+            Create User
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/api.js"></script>
+    <script>
+      const me = requireAuth("admin");
+      if (me) document.getElementById("navUser").textContent = me.full_name;
+
+      let allUsers = [];
+
+      function toast(msg, type = "success") {
+        const t = document.createElement("div");
+        t.className = `toast toast-${type}`;
+        t.textContent = msg;
+        document.getElementById("toastWrap").appendChild(t);
+        setTimeout(() => t.remove(), 3500);
+      }
+
+      function formatDate(dt) {
+        return new Date(dt).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+      }
+
+      function initials(name) {
+        return name
+          .split(" ")
+          .slice(0, 2)
+          .map((w) => w[0])
+          .join("")
+          .toUpperCase();
+      }
+
+      async function loadUsers() {
+        try {
+          allUsers = await api("GET", "/auth/users");
+          renderStats();
+          renderUsers();
+        } catch (e) {
+          // Fallback: show just the logged-in admin if endpoint doesn't exist yet
+          try {
+            const myInfo = await api("GET", "/auth/me");
+            allUsers = [myInfo];
+            renderStats();
+            renderUsers();
+          } catch (e2) {
+            toast(e2.message, "error");
+          }
+        }
+      }
+
+      function renderStats() {
+        document.getElementById("statTotal").textContent = allUsers.length;
+        document.getElementById("statAdmins").textContent = allUsers.filter(
+          (u) => u.role === "admin",
+        ).length;
+        document.getElementById("statRecruiters").textContent = allUsers.filter(
+          (u) => u.role === "recruiter",
+        ).length;
+        document.getElementById("statActive").textContent = allUsers.filter(
+          (u) => u.is_active,
+        ).length;
+      }
+
+      function renderUsers() {
+        const q = document.getElementById("searchInput").value.toLowerCase();
+        const filtered = allUsers.filter(
+          (u) =>
+            u.full_name.toLowerCase().includes(q) ||
+            u.email.toLowerCase().includes(q),
+        );
+
+        if (!filtered.length) {
+          document.getElementById("usersBody").innerHTML =
+            `<tr><td colspan="5"><div class="empty"><div class="empty-icon">👤</div><p>No users found.</p></div></td></tr>`;
+          return;
+        }
+
+        document.getElementById("usersBody").innerHTML = filtered
+          .map(
+            (u) => `
+          <tr>
+            <td>
+              <div class="user-cell">
+                <div class="avatar ${u.role === "recruiter" ? "recruiter" : ""}">${initials(u.full_name)}</div>
+                <div>
+                  <div style="font-weight:600;font-size:13.5px">${u.full_name}</div>
+                  ${u.id === me?.id ? '<div style="font-size:11px;color:var(--muted)">You</div>' : ""}
+                </div>
+              </div>
+            </td>
+            <td style="color:var(--muted);font-size:13px">${u.email}</td>
+            <td>
+              <span class="badge ${u.role === "admin" ? "badge-approved" : "badge-draft"}">
+                ${u.role}
+              </span>
+            </td>
+            <td>
+              <button
+                class="toggle-btn ${u.is_active ? "on" : ""}"
+                onclick="toggleActive('${u.id}', ${u.is_active})"
+                title="${u.is_active ? "Deactivate" : "Activate"} user"
+                ${u.id === me?.id ? "disabled style='opacity:.4;cursor:not-allowed'" : ""}
+              ></button>
+            </td>
+            <td style="color:var(--muted);font-size:12.5px">${formatDate(u.created_at)}</td>
+          </tr>
+        `,
+          )
+          .join("");
+      }
+
+      async function toggleActive(userId, currentlyActive) {
+        try {
+          await api("PATCH", `/auth/users/${userId}`, {
+            is_active: !currentlyActive,
+          });
+          toast(currentlyActive ? "User deactivated" : "User activated");
+          loadUsers();
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
+
+      function openCreateModal() {
+        document.getElementById("fullName").value = "";
+        document.getElementById("email").value = "";
+        document.getElementById("password").value = "";
+        document.getElementById("role").value = "recruiter";
+        document.getElementById("createModal").classList.add("open");
+        setTimeout(() => document.getElementById("fullName").focus(), 100);
+      }
+
+      function closeModal() {
+        document.getElementById("createModal").classList.remove("open");
+      }
+
+      async function createUser() {
+        const full_name = document.getElementById("fullName").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const role = document.getElementById("role").value;
+
+        if (!full_name || !email || !password) {
+          toast("Fill in all required fields", "error");
+          return;
+        }
+
+        const btn = document.getElementById("createBtn");
+        btn.disabled = true;
+        btn.textContent = "Creating…";
+
+        try {
+          await api("POST", "/auth/users", {
+            full_name,
+            email,
+            password,
+            role,
+          });
+          toast(
+            `${role === "admin" ? "Admin" : "Recruiter"} created successfully`,
+          );
+          closeModal();
+          loadUsers();
+        } catch (e) {
+          toast(e.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Create User";
+        }
+      }
+
+      loadUsers();
+    </script>
+  </body>
+</html>

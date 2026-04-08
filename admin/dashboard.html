@@ -1,0 +1,1330 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GK Offers — Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/style.css" />
+    <style>
+      .admin-layout {
+        display: flex;
+        min-height: calc(100dvh - 60px);
+      }
+
+      /* ── Queue panel ───────────────────────────────────────────── */
+      .queue-panel {
+        width: 290px;
+        flex-shrink: 0;
+        background: #fff;
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        position: sticky;
+        top: 60px;
+        height: calc(100dvh - 60px);
+        overflow: hidden;
+      }
+      .queue-header {
+        padding: 16px 16px 12px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+      .queue-title {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: var(--muted);
+        margin-bottom: 3px;
+      }
+      .queue-count {
+        font-family: "DM Serif Display", serif;
+        font-size: 22px;
+        color: var(--navy);
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+      }
+      .queue-count span {
+        font-family: "DM Sans", sans-serif;
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 400;
+      }
+      .queue-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 10px;
+      }
+      .queue-empty {
+        text-align: center;
+        padding: 48px 16px;
+        color: var(--muted);
+      }
+      .queue-empty-icon {
+        font-size: 32px;
+        margin-bottom: 8px;
+      }
+      .queue-empty p {
+        font-size: 13px;
+      }
+
+      .queue-card {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 13px;
+        margin-bottom: 9px;
+        cursor: pointer;
+        transition: all 0.15s;
+        position: relative;
+      }
+      .queue-card:hover {
+        border-color: var(--navy);
+        box-shadow: 0 2px 12px rgba(31, 56, 100, 0.08);
+        transform: translateY(-1px);
+      }
+      .queue-card.active {
+        border-color: var(--navy);
+        background: #eef1fb;
+      }
+      .queue-card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: var(--orange);
+        border-radius: 10px 0 0 10px;
+      }
+      .qc-name {
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--navy);
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .qc-meta {
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 9px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex-wrap: wrap;
+      }
+      .qc-pill {
+        background: #eef1fb;
+        color: var(--navy);
+        border-radius: 20px;
+        padding: 1px 7px;
+        font-size: 10px;
+        font-weight: 600;
+      }
+      .qc-time {
+        color: var(--orange);
+        font-weight: 500;
+      }
+      .qc-btns {
+        display: flex;
+        gap: 5px;
+      }
+      .qc-btns .btn {
+        flex: 1;
+        justify-content: center;
+        font-size: 11.5px;
+        padding: 5px 6px;
+      }
+
+      /* ── Main ──────────────────────────────────────────────────── */
+      .main-content {
+        flex: 1;
+        min-width: 0;
+        padding: 22px 26px;
+      }
+
+      .stats-filter {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .sfc {
+        background: var(--surface);
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        cursor: pointer;
+        transition: all 0.14s;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .sfc:hover {
+        border-color: var(--navy);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow);
+      }
+      .sfc.active {
+        border-color: var(--navy);
+        background: #eef1fb;
+      }
+      .sfc.pend.active {
+        border-color: var(--orange);
+        background: #fff8ee;
+      }
+      .sfc.appr.active {
+        border-color: var(--green);
+        background: #eefaf3;
+      }
+      .sfc.rej.active {
+        border-color: var(--red);
+        background: #fef1f1;
+      }
+      .sfc .stat-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .sfc .stat-value {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--navy);
+        line-height: 1.2;
+      }
+      .sfc.pend .stat-value {
+        color: var(--orange);
+      }
+      .sfc.appr .stat-value {
+        color: var(--green);
+      }
+      .sfc.rej .stat-value {
+        color: var(--red);
+      }
+
+      .table-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+      .filter-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--navy);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .filter-clear {
+        font-size: 11.5px;
+        color: var(--muted);
+        cursor: pointer;
+        text-decoration: underline;
+        font-weight: 400;
+      }
+      .filter-clear:hover {
+        color: var(--navy);
+      }
+
+      /* ── Drawer ────────────────────────────────────────────────── */
+      .drawer-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 15, 30, 0.4);
+        backdrop-filter: blur(2px);
+        z-index: 300;
+      }
+      .drawer-overlay.open {
+        display: block;
+      }
+
+      .drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 600px;
+        max-width: 100vw;
+        height: 100dvh;
+        background: #fff;
+        box-shadow: -8px 0 40px rgba(31, 56, 100, 0.15);
+        display: flex;
+        flex-direction: column;
+        transform: translateX(100%);
+        transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 301;
+      }
+      .drawer-overlay.open .drawer {
+        transform: translateX(0);
+      }
+
+      /* Drawer header */
+      .drawer-header {
+        padding: 16px 20px 13px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .dh-left {
+      }
+      .dh-meta {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        flex-wrap: wrap;
+        margin-bottom: 5px;
+      }
+      .dh-pill {
+        background: #eef1fb;
+        color: var(--navy);
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 2px 9px;
+        border-radius: 20px;
+      }
+      .dh-name {
+        font-family: "DM Serif Display", serif;
+        font-size: 19px;
+        color: var(--navy);
+        margin-bottom: 3px;
+      }
+      .dh-sub {
+        font-size: 11.5px;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .drawer-close {
+        background: #f4f6fb;
+        border: none;
+        border-radius: 8px;
+        width: 30px;
+        height: 30px;
+        font-size: 15px;
+        cursor: pointer;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: background 0.14s;
+      }
+      .drawer-close:hover {
+        background: #e0e5f5;
+        color: var(--navy);
+      }
+
+      /* ── Drawer tabs ───────────────────────────────────────────── */
+      .drawer-tabs {
+        display: flex;
+        border-bottom: 2px solid var(--border);
+        flex-shrink: 0;
+        background: #fff;
+      }
+      .drawer-tab {
+        flex: 1;
+        padding: 10px 0;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--muted);
+        cursor: pointer;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+      .drawer-tab:hover {
+        color: var(--navy);
+        background: #f8f9fd;
+      }
+      .drawer-tab.active {
+        color: var(--navy);
+        border-bottom-color: var(--navy);
+        font-weight: 600;
+      }
+      .drawer-tab-content {
+        display: none;
+        flex: 1;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .drawer-tab-content.active {
+        display: flex;
+      }
+
+      /* ── History timeline ──────────────────────────────────────── */
+      .history-wrap {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px 24px;
+      }
+      .history-item {
+        display: flex;
+        gap: 14px;
+        padding-bottom: 24px;
+        position: relative;
+      }
+      .history-item:not(:last-child)::before {
+        content: "";
+        position: absolute;
+        left: 15px;
+        top: 32px;
+        bottom: 0;
+        width: 2px;
+        background: var(--border);
+      }
+      .history-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1;
+      }
+      .history-icon.approved {
+        background: #e2f8ee;
+        color: var(--green);
+      }
+      .history-icon.rejected {
+        background: #fde8e8;
+        color: var(--red);
+      }
+      .history-body {
+        flex: 1;
+        min-width: 0;
+        padding-top: 5px;
+      }
+      .history-action {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 2px;
+      }
+      .history-meta {
+        font-size: 11.5px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      .history-comment {
+        font-size: 12.5px;
+        color: #444;
+        background: #f4f6fb;
+        border-left: 3px solid var(--border);
+        border-radius: 0 6px 6px 0;
+        padding: 7px 12px;
+        line-height: 1.55;
+      }
+      .history-comment.is-rejection {
+        border-left-color: var(--red);
+        background: #fef5f5;
+      }
+      .history-comment.is-approval {
+        border-left-color: var(--green);
+        background: #f2fbf6;
+      }
+      .history-empty {
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+        padding: 48px 0;
+      }
+
+      /* Preview iframe area */
+      .drawer-preview {
+        flex: 1;
+        overflow: hidden;
+        background: #f4f6fb;
+        border-bottom: 1px solid var(--border);
+        position: relative;
+      }
+      .preview-iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: #fff;
+      }
+      .preview-loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f4f6fb;
+        font-size: 13px;
+        color: var(--muted);
+        gap: 8px;
+      }
+
+      /* Admin Notes Section */
+      .admin-notes-section {
+        padding: 14px 20px;
+        background: #fef9f0;
+        border-bottom: 1px solid #f5c518;
+      }
+      .admin-notes-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #b8860b;
+        margin-bottom: 6px;
+      }
+      .admin-notes-text {
+        font-size: 13px;
+        color: #333;
+        line-height: 1.6;
+      }
+
+      /* Drawer footer */
+      .drawer-footer {
+        padding: 14px 20px;
+        border-top: 1px solid var(--border);
+        flex-shrink: 0;
+        background: #fafbfd;
+      }
+      .drawer-footer-pending {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .comment-row {
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+      }
+      .comment-wrap {
+        flex: 1;
+      }
+      .comment-label {
+        font-size: 10.5px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 4px;
+      }
+      .comment-input {
+        width: 100%;
+        padding: 7px 10px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 13px;
+        resize: none;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      .comment-input:focus {
+        border-color: var(--navy);
+      }
+      .footer-btn-row {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      /* Comment Modal */
+      .comment-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 15, 30, 0.5);
+        z-index: 400;
+        align-items: center;
+        justify-content: center;
+      }
+      .comment-modal-overlay.open {
+        display: flex;
+      }
+      .comment-modal {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(31, 56, 100, 0.3);
+        width: 90%;
+        max-width: 460px;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .modal-header {
+        padding: 18px 22px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .modal-title {
+        font-weight: 700;
+        font-size: 16px;
+        color: var(--navy);
+      }
+      .modal-close {
+        background: none;
+        border: none;
+        font-size: 22px;
+        color: var(--muted);
+        cursor: pointer;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: all 0.15s;
+      }
+      .modal-close:hover {
+        background: #f4f6fb;
+        color: var(--navy);
+      }
+      .modal-body {
+        padding: 20px 22px;
+        flex: 1;
+        overflow-y: auto;
+      }
+      .modal-footer {
+        padding: 14px 22px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+
+      /* Admin notes badge */
+      .notes-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #fef9f0;
+        border: 1px solid #f5c518;
+        color: #b8860b;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 10.5px;
+        font-weight: 600;
+        cursor: help;
+        max-width: 150px;
+      }
+      .notes-badge-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* Responsive */
+      @media (max-width: 900px) {
+        .queue-panel {
+          display: none;
+        }
+        .stats-filter {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      @media (max-width: 640px) {
+        .stats-filter {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar">
+      <a class="navbar-brand" href="/admin/dashboard.html"
+        >GK <span class="dot">·</span> Offers</a
+      >
+      <div class="navbar-right">
+        <a
+          href="/admin/users.html"
+          class="btn btn-outline btn-sm"
+          style="color: #fff; border-color: rgba(255, 255, 255, 0.3)"
+        >
+          👥 Users
+        </a>
+        <span class="navbar-user" id="navUser"></span>
+        <span
+          class="navbar-role"
+          style="background: var(--gold); color: var(--navy)"
+          >Admin</span
+        >
+        <button
+          class="btn btn-outline btn-sm"
+          onclick="logout()"
+          style="color: #fff; border-color: rgba(255, 255, 255, 0.3)"
+        >
+          Sign Out
+        </button>
+      </div>
+    </nav>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <!-- Admin Layout -->
+    <div class="admin-layout">
+      <!-- Queue Panel -->
+      <div class="queue-panel">
+        <div class="queue-header">
+          <div class="queue-title">Pending Approval</div>
+          <div class="queue-count">
+            <span id="queueNum">0</span> <span>documents</span>
+          </div>
+        </div>
+        <div class="queue-body" id="queueBody"></div>
+      </div>
+
+      <!-- Main -->
+      <div class="main-content">
+        <!-- Stats + Filters -->
+        <div class="stats-filter">
+          <div class="sfc" onclick="filterBy('all')">
+            <div class="stat-label">All</div>
+            <div class="stat-value" id="statAll">0</div>
+          </div>
+          <div class="sfc" onclick="filterBy('draft')">
+            <div class="stat-label">Draft</div>
+            <div class="stat-value" id="statDraft">0</div>
+          </div>
+          <div class="sfc pend" onclick="filterBy('pending_approval')">
+            <div class="stat-label">Pending</div>
+            <div class="stat-value" id="statPending">0</div>
+          </div>
+          <div class="sfc appr" onclick="filterBy('approved')">
+            <div class="stat-label">Approved</div>
+            <div class="stat-value" id="statApproved">0</div>
+          </div>
+          <div class="sfc rej" onclick="filterBy('rejected')">
+            <div class="stat-label">Rejected</div>
+            <div class="stat-value" id="statRejected">0</div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="card">
+          <div class="card-header table-toolbar">
+            <div class="filter-label">
+              <span id="filterDisplay">All Documents</span>
+              <span
+                class="filter-clear"
+                id="filterClear"
+                style="display: none"
+                onclick="filterBy('all')"
+                >Clear filter</span
+              >
+            </div>
+            <input
+              class="form-control"
+              style="width: 240px"
+              placeholder="Search by candidate name..."
+              id="searchInput"
+              oninput="renderTable()"
+            />
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Candidate</th>
+                  <th>Document Type</th>
+                  <th>Created By</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="docsBody">
+                <tr>
+                  <td colspan="6">
+                    <div class="empty">
+                      <div class="empty-icon">⏳</div>
+                      <p>Loading...</p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drawer Overlay -->
+    <div
+      class="drawer-overlay"
+      id="drawerOverlay"
+      onclick="handleOverlayClick(event)"
+    >
+      <div class="drawer" onclick="event.stopPropagation()">
+        <div class="drawer-header">
+          <div class="dh-left">
+            <div class="dh-meta">
+              <span class="dh-pill" id="ddDocType"></span>
+              <span id="ddStatusBadge"></span>
+            </div>
+            <div class="dh-name" id="ddCandidate"></div>
+            <div class="dh-sub" id="ddSub"></div>
+          </div>
+          <button class="drawer-close" onclick="closeDrawer()">×</button>
+        </div>
+
+        <!-- Tab bar -->
+        <div class="drawer-tabs">
+          <button
+            class="drawer-tab active"
+            id="ddTabPreview"
+            onclick="switchDrawerTab('preview')"
+          >
+            📄 Preview
+          </button>
+          <button
+            class="drawer-tab"
+            id="ddTabHistory"
+            onclick="switchDrawerTab('history')"
+          >
+            🕓 History
+          </button>
+        </div>
+
+        <!-- Preview tab -->
+        <div class="drawer-tab-content active" id="ddPanelPreview">
+          <!-- Admin Notes (if present — shown above iframe in preview) -->
+          <div
+            id="ddAdminNotes"
+            style="display: none"
+            class="admin-notes-section"
+          >
+            <div class="admin-notes-label">📝 Last Admin Note</div>
+            <div class="admin-notes-text" id="ddAdminNotesText"></div>
+          </div>
+          <div class="drawer-preview">
+            <div class="preview-loading" id="previewLoading">
+              <span>⏳</span>
+              <span>Rendering preview...</span>
+            </div>
+            <iframe class="preview-iframe" id="previewFrame"></iframe>
+          </div>
+        </div>
+
+        <!-- History tab -->
+        <div class="drawer-tab-content" id="ddPanelHistory">
+          <div class="history-wrap" id="ddHistory">
+            <div class="history-empty">Loading history…</div>
+          </div>
+        </div>
+
+        <div class="drawer-footer" id="ddFooter"></div>
+      </div>
+    </div>
+
+    <!-- Comment Modal -->
+    <div
+      class="comment-modal-overlay"
+      id="commentModal"
+      onclick="closeCommentModal()"
+    >
+      <div class="comment-modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <span class="modal-title" id="commentModalTitle">Add Comments</span>
+          <button class="modal-close" onclick="closeCommentModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label"
+              >Comments
+              <span style="font-weight: 400; color: var(--muted)"
+                >(optional)</span
+              ></label
+            >
+            <textarea
+              class="form-control"
+              id="commentModalInput"
+              rows="4"
+              placeholder="Add notes for the recruiter..."
+            ></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="closeCommentModal()">
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            id="commentModalBtn"
+            onclick="confirmQuickAction()"
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/api.js"></script>
+    <script src="/letter_preview.js"></script>
+    <script>
+      const me = requireAuth("admin");
+      if (me) document.getElementById("navUser").textContent = me.full_name;
+
+      let allDocs = [];
+      let activeDoc = null;
+      let activeFilter = "all";
+      let pendingAction = null; // Stores { docId, action } for quick actions
+
+      function toast(msg, type = "success") {
+        const t = document.createElement("div");
+        t.className = `toast toast-${type}`;
+        t.textContent = msg;
+        document.getElementById("toastWrap").appendChild(t);
+        setTimeout(() => t.remove(), 3500);
+      }
+
+      async function loadAll() {
+        try {
+          allDocs = await api("GET", "/documents");
+          renderStats();
+          renderQueue();
+          renderTable();
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
+
+      // ── Stats ──────────────────────────────────────────────────────────────
+      function renderStats() {
+        const all = allDocs.length;
+        const draft = allDocs.filter((d) => d.status === "draft").length;
+        const pend = allDocs.filter(
+          (d) => d.status === "pending_approval",
+        ).length;
+        const appr = allDocs.filter((d) => d.status === "approved").length;
+        const rej = allDocs.filter((d) => d.status === "rejected").length;
+
+        document.getElementById("statAll").textContent = all;
+        document.getElementById("statDraft").textContent = draft;
+        document.getElementById("statPending").textContent = pend;
+        document.getElementById("statApproved").textContent = appr;
+        document.getElementById("statRejected").textContent = rej;
+      }
+
+      function filterBy(status) {
+        activeFilter = status;
+        const labels = {
+          all: "All Documents",
+          draft: "Draft Documents",
+          pending_approval: "Pending Approval",
+          approved: "Approved Documents",
+          rejected: "Rejected Documents",
+        };
+        document.getElementById("filterDisplay").textContent = labels[status];
+        document.getElementById("filterClear").style.display =
+          status === "all" ? "none" : "inline";
+
+        // Update active state on stat cards
+        document
+          .querySelectorAll(".sfc")
+          .forEach((c) => c.classList.remove("active"));
+        const idx = [
+          "all",
+          "draft",
+          "pending_approval",
+          "approved",
+          "rejected",
+        ].indexOf(status);
+        if (idx >= 0)
+          document.querySelectorAll(".sfc")[idx].classList.add("active");
+
+        renderTable();
+      }
+
+      // ── Queue ──────────────────────────────────────────────────────────────
+      function timeAgo(dt) {
+        const diff = Date.now() - new Date(dt);
+        const h = Math.floor(diff / 36e5),
+          d = Math.floor(diff / 864e5);
+        if (d > 0) return `${d}d ago`;
+        if (h > 0) return `${h}h ago`;
+        return "Just now";
+      }
+
+      function renderQueue() {
+        const pending = allDocs.filter((d) => d.status === "pending_approval");
+        document.getElementById("queueNum").textContent = pending.length;
+        if (!pending.length) {
+          document.getElementById("queueBody").innerHTML =
+            `<div class="queue-empty"><div class="queue-empty-icon">✅</div><p>All caught up!</p></div>`;
+          return;
+        }
+        document.getElementById("queueBody").innerHTML = pending
+          .map(
+            (d) => `
+          <div class="queue-card ${activeDoc?.id === d.id ? "active" : ""}" onclick="openDrawer('${d.id}')">
+            <div class="qc-name">${d.candidate_name}</div>
+            <div class="qc-meta">
+              <span class="qc-pill">${d.document_type_label}</span>
+              <span class="qc-time">${timeAgo(d.updated_at)}</span>
+            </div>
+            <div class="qc-btns" onclick="event.stopPropagation()">
+              <button class="btn btn-success btn-sm" onclick="openQuickActionModal('${d.id}','approve')">✓ Approve</button>
+              <button class="btn btn-danger  btn-sm" onclick="openQuickActionModal('${d.id}','reject')">✕ Reject</button>
+            </div>
+          </div>`,
+          )
+          .join("");
+      }
+
+      // ── Quick Action Modal ─────────────────────────────────────────────────
+      function openQuickActionModal(docId, action) {
+        pendingAction = { docId, action };
+        const title =
+          action === "approve" ? "Approve Document" : "Reject Document";
+        document.getElementById("commentModalTitle").textContent = title;
+        document.getElementById("commentModalInput").value = "";
+        document.getElementById("commentModalBtn").textContent =
+          action === "approve" ? "✓ Approve" : "✕ Reject";
+        document.getElementById("commentModalBtn").className =
+          action === "approve" ? "btn btn-success" : "btn btn-danger";
+        document.getElementById("commentModal").classList.add("open");
+        setTimeout(
+          () => document.getElementById("commentModalInput").focus(),
+          100,
+        );
+      }
+
+      function closeCommentModal() {
+        document.getElementById("commentModal").classList.remove("open");
+        pendingAction = null;
+      }
+
+      async function confirmQuickAction() {
+        if (!pendingAction) return;
+        const { docId, action } = pendingAction;
+        const comments = document
+          .getElementById("commentModalInput")
+          .value.trim();
+
+        const btn = document.getElementById("commentModalBtn");
+        btn.disabled = true;
+        btn.textContent =
+          action === "approve" ? "Generating PDF..." : "Rejecting...";
+
+        try {
+          await api("POST", `/documents/${docId}/${action}`, { comments });
+          toast(
+            action === "approve"
+              ? "Approved & PDF generated"
+              : "Document rejected",
+          );
+          closeCommentModal();
+          if (activeDoc?.id === docId) closeDrawer();
+          loadAll();
+        } catch (e) {
+          toast(e.message, "error");
+          btn.disabled = false;
+          btn.textContent = action === "approve" ? "✓ Approve" : "✕ Reject";
+        }
+      }
+
+      // ── Table ──────────────────────────────────────────────────────────────
+      function statusBadge(s) {
+        const m = {
+          draft: "badge-draft",
+          pending_approval: "badge-pending",
+          approved: "badge-approved",
+          rejected: "badge-rejected",
+        };
+        const l = {
+          draft: "Draft",
+          pending_approval: "Pending",
+          approved: "Approved",
+          rejected: "Rejected",
+        };
+        return `<span class="badge ${m[s] || ""}">${l[s] || s}</span>`;
+      }
+
+      function formatDate(dt) {
+        return new Date(dt).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+      }
+
+      function renderTable() {
+        const q = document.getElementById("searchInput").value.toLowerCase();
+        const docs = allDocs
+          .filter((d) => activeFilter === "all" || d.status === activeFilter)
+          .filter((d) => d.candidate_name.toLowerCase().includes(q));
+
+        const tbody = document.getElementById("docsBody");
+        if (!docs.length) {
+          tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">📄</div><p>No documents found.</p></div></td></tr>`;
+          return;
+        }
+        tbody.innerHTML = docs
+          .map(
+            (d) => `
+          <tr style="cursor:pointer" onclick="openDrawer('${d.id}')">
+            <td>
+              <b>${d.candidate_name}</b>
+              ${d.admin_notes ? `<br><span class="notes-badge" title="${d.admin_notes}"><span class="notes-badge-text">📝 ${d.admin_notes}</span></span>` : ""}
+            </td>
+            <td>${d.document_type_label}</td>
+            <td style="color:var(--muted);font-size:12.5px">${d.created_by_name || "—"}</td>
+            <td>${statusBadge(d.status)}</td>
+            <td style="font-size:12.5px;color:var(--muted)">${formatDate(d.created_at)}</td>
+            <td onclick="event.stopPropagation()">
+              <div style="display:flex;gap:5px;flex-wrap:wrap">
+                <button class="btn btn-outline btn-sm" onclick="openDrawer('${d.id}')">Preview</button>
+                ${
+                  d.status === "pending_approval"
+                    ? `
+                  <button class="btn btn-success btn-sm" onclick="openQuickActionModal('${d.id}','approve')">Approve</button>
+                  <button class="btn btn-danger  btn-sm" onclick="openQuickActionModal('${d.id}','reject')">Reject</button>
+                `
+                    : ""
+                }
+                ${
+                  d.status === "approved"
+                    ? `
+                  <button class="btn btn-primary btn-sm" onclick="downloadPdf('${d.id}','${d.candidate_name}')">⬇ PDF</button>
+                `
+                    : ""
+                }
+              </div>
+            </td>
+          </tr>`,
+          )
+          .join("");
+      }
+
+      // ── Drawer ─────────────────────────────────────────────────────────────
+      function switchDrawerTab(tab) {
+        document
+          .getElementById("ddTabPreview")
+          .classList.toggle("active", tab === "preview");
+        document
+          .getElementById("ddTabHistory")
+          .classList.toggle("active", tab === "history");
+        document
+          .getElementById("ddPanelPreview")
+          .classList.toggle("active", tab === "preview");
+        document
+          .getElementById("ddPanelHistory")
+          .classList.toggle("active", tab === "history");
+      }
+
+      async function openDrawer(docId) {
+        activeDoc = allDocs.find((d) => d.id === docId);
+        if (!activeDoc) return;
+        const doc = activeDoc;
+
+        // Always start on Preview tab
+        switchDrawerTab("preview");
+
+        // Header
+        document.getElementById("ddDocType").textContent =
+          doc.document_type_label;
+        document.getElementById("ddStatusBadge").innerHTML = statusBadge(
+          doc.status,
+        );
+        document.getElementById("ddCandidate").textContent = doc.candidate_name;
+        document.getElementById("ddSub").innerHTML =
+          `<span>v${doc.current_version}</span><span>·</span><span>${formatDate(doc.created_at)}</span>` +
+          (doc.created_by_name
+            ? `<span>·</span><span>by ${doc.created_by_name}</span>`
+            : "");
+
+        // Admin Notes strip
+        if (doc.admin_notes) {
+          document.getElementById("ddAdminNotes").style.display = "block";
+          document.getElementById("ddAdminNotesText").textContent =
+            doc.admin_notes;
+        } else {
+          document.getElementById("ddAdminNotes").style.display = "none";
+        }
+
+        // Preview
+        document.getElementById("previewLoading").style.display = "flex";
+        const iframe = document.getElementById("previewFrame");
+        iframe.srcdoc = LetterPreview.render(doc);
+        iframe.onload = () => {
+          document.getElementById("previewLoading").style.display = "none";
+        };
+
+        // Footer
+        const footer = document.getElementById("ddFooter");
+        if (doc.status === "pending_approval") {
+          footer.innerHTML = `
+            <div class="drawer-footer-pending">
+              <div class="comment-row">
+                <div class="comment-wrap">
+                  <div class="comment-label">Comments <span style="font-weight:400;text-transform:none">(optional)</span></div>
+                  <textarea class="comment-input" id="ddComment" rows="2" placeholder="Add a note for the recruiter..."></textarea>
+                </div>
+              </div>
+              <div class="footer-btn-row">
+                <button class="btn btn-danger"  onclick="drawerAction('reject')">✕ Reject</button>
+                <button class="btn btn-success" id="approveBtn" onclick="drawerAction('approve')">✓ Approve &amp; Generate PDF</button>
+              </div>
+            </div>`;
+        } else if (doc.status === "approved") {
+          footer.innerHTML = `
+            <div style="display:flex;justify-content:flex-end">
+              <button class="btn btn-primary" onclick="downloadPdf('${doc.id}','${doc.candidate_name}')">⬇ Download PDF</button>
+            </div>`;
+        } else {
+          const msg =
+            doc.status === "rejected"
+              ? "This document was rejected. The recruiter can revise and resubmit."
+              : "Document is in draft state.";
+          footer.innerHTML = `<p style="font-size:12.5px;color:var(--muted);text-align:center">${msg}</p>`;
+        }
+
+        document.getElementById("drawerOverlay").classList.add("open");
+        renderQueue();
+
+        // Load history in background
+        loadDrawerHistory(docId);
+      }
+
+      async function loadDrawerHistory(docId) {
+        const el = document.getElementById("ddHistory");
+        el.innerHTML = `<div class="history-empty">Loading history…</div>`;
+        try {
+          const logs = await api("GET", `/documents/${docId}/approval-logs`);
+          if (!logs.length) {
+            el.innerHTML = `<div class="history-empty">No review history yet.</div>`;
+            return;
+          }
+          const chronological = [...logs].reverse();
+          el.innerHTML = chronological
+            .map((log, i) => {
+              const isApproved = log.action === "approved";
+              const iconClass = isApproved ? "approved" : "rejected";
+              const icon = isApproved ? "✓" : "✕";
+              const actionLabel = isApproved ? "Approved" : "Rejected";
+              const commentClass = isApproved ? "is-approval" : "is-rejection";
+              const versionNum = i + 1;
+              const dt = new Date(log.created_at).toLocaleString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+              return `
+              <div class="history-item">
+                <div class="history-icon ${iconClass}">${icon}</div>
+                <div class="history-body">
+                  <div class="history-action">${actionLabel} <span style="color:var(--muted);font-weight:400;font-size:12px">· v${versionNum}</span></div>
+                  <div class="history-meta">by ${log.reviewer_name} · ${dt}</div>
+                  ${
+                    log.comments
+                      ? `<div class="history-comment ${commentClass}">${log.comments}</div>`
+                      : `<div style="font-size:12px;color:var(--muted);font-style:italic">No comment left</div>`
+                  }
+                </div>
+              </div>`;
+            })
+            .join("");
+        } catch (e) {
+          el.innerHTML = `<div class="history-empty">Could not load history.</div>`;
+        }
+      }
+
+      function closeDrawer() {
+        document.getElementById("drawerOverlay").classList.remove("open");
+        activeDoc = null;
+        renderQueue();
+      }
+
+      function handleOverlayClick(e) {
+        if (e.target === document.getElementById("drawerOverlay"))
+          closeDrawer();
+      }
+
+      async function drawerAction(action) {
+        if (!activeDoc) return;
+        const comments =
+          document.getElementById("ddComment")?.value.trim() || "";
+        const approveBtn = document.getElementById("approveBtn");
+        const rejectBtn = document.querySelector("#ddFooter .btn-danger");
+
+        if (approveBtn) {
+          approveBtn.disabled = true;
+          approveBtn.textContent = "Generating PDF…";
+        }
+        if (rejectBtn) rejectBtn.disabled = true;
+
+        try {
+          await api("POST", `/documents/${activeDoc.id}/${action}`, {
+            comments,
+          });
+          toast(
+            action === "approve"
+              ? "Approved & PDF generated"
+              : "Document rejected",
+          );
+          closeDrawer();
+          loadAll();
+        } catch (e) {
+          toast(e.message, "error");
+          if (approveBtn) {
+            approveBtn.disabled = false;
+            approveBtn.textContent = "✓ Approve & Generate PDF";
+          }
+          if (rejectBtn) rejectBtn.disabled = false;
+        }
+      }
+
+      // ── Download ───────────────────────────────────────────────────────────
+      async function downloadPdf(docId, candidateName) {
+        try {
+          const res = await fetch(`/documents/${docId}/pdf`, {
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+          if (!res.ok) throw new Error("Download failed");
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${candidateName.replace(/ /g, "_")}.pdf`;
+          a.click();
+          URL.revokeObjectURL(url);
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
+
+      loadAll();
+    </script>
+  </body>
+</html>

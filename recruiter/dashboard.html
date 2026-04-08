@@ -1,0 +1,1919 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GK Offers — My Documents</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/style.css" />
+    <style>
+      /* ── App layout ───────────────────────────────────────────── */
+      .app-layout {
+        display: flex;
+        min-height: calc(100dvh - 60px);
+      }
+
+      /* ── Sidebar ──────────────────────────────────────────────── */
+      .sidebar {
+        width: 230px;
+        flex-shrink: 0;
+        background: #fff;
+        border-right: 1px solid var(--border);
+        padding: 20px 0;
+        position: sticky;
+        top: 60px;
+        height: calc(100dvh - 60px);
+        overflow-y: auto;
+      }
+      .sidebar-title {
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        padding: 0 18px;
+        margin-bottom: 8px;
+      }
+      .sidebar-divider {
+        height: 1px;
+        background: var(--border);
+        margin: 10px 18px;
+      }
+      .doc-type-btn,
+      .sidebar-all-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 10px 18px;
+        background: none;
+        border: none;
+        border-left: 3px solid transparent;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text);
+        cursor: pointer;
+        text-align: left;
+        transition: all 0.14s;
+        line-height: 1.3;
+      }
+      .doc-type-btn:hover,
+      .sidebar-all-btn:hover {
+        background: #f4f6fb;
+        color: var(--navy);
+      }
+      .doc-type-btn.active,
+      .sidebar-all-btn.active {
+        background: #eef1fb;
+        border-left-color: var(--navy);
+        color: var(--navy);
+        font-weight: 600;
+      }
+      .doc-type-icon {
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+
+      /* ── Main content ─────────────────────────────────────────── */
+      .main-content {
+        flex: 1;
+        min-width: 0;
+        padding: 28px 28px;
+      }
+      .content-topbar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .content-heading {
+        font-family: "DM Serif Display", serif;
+        font-size: 22px;
+        color: var(--navy);
+      }
+      .content-sub {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+
+      /* ── Responsive sidebar ───────────────────────────────────── */
+      @media (max-width: 768px) {
+        .app-layout {
+          flex-direction: column;
+        }
+        .sidebar {
+          width: 100%;
+          height: auto;
+          position: static;
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+          padding: 10px 0;
+          display: flex;
+          flex-wrap: wrap;
+        }
+        .sidebar-title,
+        .sidebar-divider {
+          display: none;
+        }
+        .doc-type-btn,
+        .sidebar-all-btn {
+          width: auto;
+          flex: 1;
+          border-left: none;
+          border-bottom: 3px solid transparent;
+          padding: 9px 10px;
+          font-size: 11px;
+          flex-direction: column;
+          gap: 3px;
+          align-items: center;
+          text-align: center;
+          min-width: 60px;
+        }
+        .doc-type-btn.active,
+        .sidebar-all-btn.active {
+          border-left-color: transparent;
+          border-bottom-color: var(--navy);
+        }
+        .main-content {
+          padding: 16px;
+        }
+      }
+
+      /* ══════════════════════════════════════════════════════════════
+         SPLIT-PANEL EDITOR  (full-screen overlay)
+         Left  = form fields  |  Right = live letter preview
+      ══════════════════════════════════════════════════════════════ */
+      .editor-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 300;
+        background: #f0f2f8;
+        animation: editorIn 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .editor-overlay.open {
+        display: flex;
+        flex-direction: column;
+      }
+
+      @keyframes editorIn {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ── Editor top bar ── */
+      .editor-topbar {
+        height: 56px;
+        background: var(--navy);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        gap: 14px;
+        flex-shrink: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .editor-back-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 8px;
+        color: #fff;
+        font-family: inherit;
+        font-size: 12.5px;
+        font-weight: 500;
+        padding: 6px 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: background 0.15s;
+        flex-shrink: 0;
+      }
+      .editor-back-btn:hover {
+        background: rgba(255, 255, 255, 0.18);
+      }
+      .editor-topbar-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+        min-width: 0;
+      }
+      .editor-doc-type-pill {
+        background: rgba(245, 197, 24, 0.18);
+        color: var(--gold);
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        padding: 3px 10px;
+        border-radius: 20px;
+        flex-shrink: 0;
+      }
+      .editor-title-text {
+        font-family: "DM Serif Display", serif;
+        font-size: 16px;
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .editor-progress-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+      .editor-progress-bar {
+        width: 100px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .editor-progress-fill {
+        height: 100%;
+        background: var(--gold);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+      }
+      .editor-progress-text {
+        font-size: 11.5px;
+        color: rgba(255, 255, 255, 0.6);
+        white-space: nowrap;
+      }
+      .editor-progress-text b {
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      /* ── Two-panel body ── */
+      .editor-body {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+      }
+
+      /* ── LEFT: form panel ── */
+      .editor-form-panel {
+        width: 420px;
+        flex-shrink: 0;
+        background: #fff;
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .editor-form-inner {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px 24px 8px;
+        scroll-behavior: smooth;
+      }
+
+      /* Admin feedback banner */
+      .editor-feedback-banner {
+        background: #fef9f0;
+        border: 1.5px solid #f5c518;
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .editor-feedback-banner .fb-icon {
+        font-size: 17px;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .editor-feedback-banner .fb-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: #b8860b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 3px;
+      }
+      .editor-feedback-banner .fb-text {
+        font-size: 13px;
+        color: #333;
+        line-height: 1.6;
+      }
+
+      /* Field sections */
+      .field-section {
+        margin-bottom: 26px;
+      }
+      .field-section-title {
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 14px;
+        padding-bottom: 8px;
+        border-bottom: 1.5px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .field-section-title .section-icon {
+        font-size: 13px;
+      }
+
+      .fields-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 14px;
+      }
+      .fields-grid .field-full {
+        grid-column: 1 / -1;
+      }
+
+      .field-wrap {
+        margin-bottom: 14px;
+        position: relative;
+      }
+      .field-label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 5px;
+      }
+      .field-required {
+        color: var(--red);
+        font-size: 12px;
+        line-height: 1;
+      }
+      .field-input {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 13.5px;
+        color: var(--text);
+        background: #fff;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+        outline: none;
+      }
+      .field-input:focus {
+        border-color: var(--navy);
+        box-shadow: 0 0 0 3px rgba(31, 56, 100, 0.08);
+      }
+      .field-input.is-valid {
+        border-color: var(--green);
+      }
+      .field-input.is-invalid {
+        border-color: var(--red);
+      }
+      .field-input.is-invalid:focus {
+        box-shadow: 0 0 0 3px rgba(224, 60, 60, 0.08);
+      }
+      .field-hint {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 3px;
+      }
+      .field-error {
+        font-size: 11px;
+        color: var(--red);
+        margin-top: 3px;
+        display: none;
+      }
+      .field-wrap.show-error .field-error {
+        display: block;
+      }
+      .field-wrap.show-error .field-input {
+        border-color: var(--red);
+      }
+
+      /* Candidate name hero input */
+      .candidate-field .field-input {
+        font-size: 15px;
+        font-weight: 500;
+        padding: 11px 14px;
+        border-radius: 10px;
+        background: #f8f9fd;
+      }
+      .candidate-field .field-label {
+        font-size: 11.5px;
+        color: var(--navy);
+        text-transform: none;
+        font-weight: 700;
+        letter-spacing: 0;
+      }
+
+      /* ── Form footer (actions) ── */
+      .editor-form-footer {
+        padding: 14px 24px;
+        border-top: 1px solid var(--border);
+        background: #fafbfd;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+      .editor-footer-hint {
+        font-size: 11.5px;
+        color: var(--muted);
+      }
+      .editor-footer-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      /* ── RIGHT: live preview panel ── */
+      .editor-preview-panel {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        background: #e8ebf4;
+        position: relative;
+        overflow: hidden;
+      }
+      .editor-preview-topbar {
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+        border-bottom: 1px solid #d4d9e8;
+      }
+      .editor-preview-label {
+        font-size: 10.5px;
+        font-weight: 700;
+        color: #8892a4;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .preview-live-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--green);
+        animation: pulse 2s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.8);
+        }
+      }
+      .editor-preview-frame-wrap {
+        flex: 1;
+        overflow: hidden;
+        padding: 16px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+      }
+      .editor-preview-shadow {
+        width: 100%;
+        max-width: 700px;
+        height: 100%;
+        background: #fff;
+        border-radius: 6px;
+        box-shadow:
+          0 4px 32px rgba(31, 56, 100, 0.18),
+          0 1px 4px rgba(31, 56, 100, 0.08);
+        overflow: hidden;
+        position: relative;
+      }
+      .editor-preview-iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: block;
+      }
+      .editor-preview-loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        font-size: 13px;
+        color: var(--muted);
+        gap: 8px;
+        flex-direction: column;
+      }
+      .editor-preview-loading-spinner {
+        width: 28px;
+        height: 28px;
+        border: 3px solid #e8edf8;
+        border-top-color: var(--navy);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ── Responsive: stack on small screens ── */
+      @media (max-width: 900px) {
+        .editor-form-panel {
+          width: 100%;
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+        .editor-body {
+          flex-direction: column;
+        }
+        .editor-preview-panel {
+          min-height: 340px;
+        }
+        .editor-progress-wrap {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar">
+      <a class="navbar-brand" href="#">GK <span class="dot">·</span> Offers</a>
+      <div class="navbar-right">
+        <span class="navbar-user" id="navUser"></span>
+        <span class="navbar-role">Recruiter</span>
+        <button
+          class="btn btn-outline btn-sm"
+          onclick="logout()"
+          style="color: #fff; border-color: rgba(255, 255, 255, 0.3)"
+        >
+          Sign Out
+        </button>
+      </div>
+    </nav>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <div class="app-layout">
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-title">Document Types</div>
+        <button
+          class="sidebar-all-btn active"
+          id="btn-all"
+          onclick="selectType(null, this)"
+        >
+          <span class="doc-type-icon">📋</span> All Documents
+        </button>
+        <div class="sidebar-divider"></div>
+        <div id="typeButtons"></div>
+      </aside>
+
+      <!-- Main -->
+      <main class="main-content">
+        <div class="content-topbar">
+          <div>
+            <div class="content-heading" id="contentHeading">All Documents</div>
+            <div class="content-sub" id="contentSub">
+              Create and manage your HR documents
+            </div>
+          </div>
+          <button
+            class="btn btn-primary"
+            id="newDocBtn"
+            onclick="openCreateDrawer()"
+            style="display: none"
+          >
+            + New Document
+          </button>
+        </div>
+
+        <div class="stats" id="stats"></div>
+
+        <div class="card">
+          <div class="card-header">
+            <span style="font-weight: 600; color: var(--navy)" id="tableLabel"
+              >All Documents</span
+            >
+            <input
+              class="form-control"
+              style="width: 220px"
+              placeholder="Search candidate..."
+              id="searchInput"
+              oninput="filterTable()"
+            />
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Candidate</th>
+                  <th>Document Type</th>
+                  <th>Status</th>
+                  <th>Version</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="docsBody">
+                <tr>
+                  <td colspan="6">
+                    <div class="empty">
+                      <div class="empty-icon">⏳</div>
+                      <p>Loading...</p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         SPLIT-PANEL LETTER EDITOR
+    ══════════════════════════════════════════════════════════════ -->
+    <div class="editor-overlay" id="editorOverlay">
+      <!-- Top bar -->
+      <div class="editor-topbar">
+        <button class="editor-back-btn" onclick="closeDrawer()">← Back</button>
+        <div class="editor-topbar-title">
+          <span class="editor-doc-type-pill" id="drawerDocType"></span>
+          <span class="editor-title-text" id="drawerTitle">New Document</span>
+        </div>
+        <div class="editor-progress-wrap">
+          <div class="editor-progress-bar">
+            <div
+              class="editor-progress-fill"
+              id="progressFill"
+              style="width: 0%"
+            ></div>
+          </div>
+          <div class="editor-progress-text">
+            <b id="progressDone">0</b>/<b id="progressTotal">0</b> fields
+          </div>
+        </div>
+      </div>
+
+      <!-- Two-panel body -->
+      <div class="editor-body">
+        <!-- LEFT: form -->
+        <div class="editor-form-panel">
+          <div class="editor-form-inner" id="drawerBody">
+            <!-- Candidate name always first -->
+            <div class="field-section">
+              <div class="field-section-title">
+                <span class="section-icon">👤</span> Employee / Candidate
+              </div>
+              <div class="field-wrap candidate-field" id="candidateWrap">
+                <div class="field-label">
+                  Full Name <span class="field-required">*</span>
+                </div>
+                <input
+                  type="text"
+                  class="field-input"
+                  id="candidateName"
+                  placeholder="e.g. Ravi Kumar Sharma"
+                  oninput="
+                    updateProgress();
+                    refreshPreview();
+                  "
+                  onblur="validateField(this, true)"
+                />
+                <div class="field-error">Name is required</div>
+              </div>
+            </div>
+
+            <!-- Dynamic field sections injected here -->
+            <div id="dynamicSections"></div>
+          </div>
+
+          <!-- Footer -->
+          <div class="editor-form-footer">
+            <span class="editor-footer-hint" id="footerHint"
+              >Fill all required fields to save</span
+            >
+            <div class="editor-footer-actions">
+              <button class="btn btn-outline" onclick="closeDrawer()">
+                Cancel
+              </button>
+              <button
+                class="btn btn-primary"
+                id="saveBtn"
+                onclick="saveDocument()"
+              >
+                <span id="saveBtnText">Save Draft</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: live preview -->
+        <div class="editor-preview-panel">
+          <div class="editor-preview-topbar">
+            <div class="editor-preview-label">
+              <div class="preview-live-dot"></div>
+              Live Preview
+            </div>
+          </div>
+          <div class="editor-preview-frame-wrap">
+            <div class="editor-preview-shadow">
+              <div class="editor-preview-loading" id="editorPreviewLoading">
+                <div class="editor-preview-loading-spinner"></div>
+                <span style="font-size: 12px">Rendering…</span>
+              </div>
+              <iframe
+                class="editor-preview-iframe"
+                id="editorPreviewFrame"
+                sandbox="allow-same-origin"
+                onload="
+                  document.getElementById(
+                    'editorPreviewLoading',
+                  ).style.display = 'none'
+                "
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit confirm modal -->
+    <div class="modal-overlay" id="submitModal">
+      <div class="modal" style="max-width: 420px">
+        <div class="modal-header">
+          <span class="modal-title">Submit for Approval</span>
+          <button class="modal-close" onclick="closeSubmitModal()">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <p style="color: var(--muted); font-size: 13.5px">
+            Once submitted, you won't be able to edit this document. Are you
+            sure?
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="closeSubmitModal()">
+            Cancel
+          </button>
+          <button class="btn btn-primary" id="confirmSubmitBtn">
+            Yes, Submit
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/api.js"></script>
+    <script src="/letter_preview.js"></script>
+    <script>
+      const user = requireAuth("recruiter");
+      if (user) document.getElementById("navUser").textContent = user.full_name;
+
+      let allDocs = [];
+      let docTypes = [];
+      let editingId = null;
+      let submitDocId = null;
+      let activeTypeId = null;
+      let currentFields = []; // fields for open drawer type
+
+      const TYPE_ICONS = {
+        offer_letter: "📄",
+        appointment_letter: "📝",
+        salary_increment: "💰",
+        promotion_letter: "🏅",
+        relieving_letter: "🚪",
+      };
+
+      // ── Field sections config per doc type ────────────────────────────────────
+      // Groups field names into labelled sections with 2-col layout hints.
+      // Fields not listed here fall into a generic "Details" section.
+      const FIELD_SECTIONS = {
+        offer_letter: [
+          {
+            title: "Identity & Role",
+            icon: "🪪",
+            fields: [
+              "full_name",
+              "designation",
+              "grade",
+              "department",
+              "date_of_birth",
+              "father_name",
+            ],
+          },
+          {
+            title: "Compensation",
+            icon: "💵",
+            fields: [
+              "monthly_salary",
+              "monthly_salary_words",
+              "yearly_salary_words",
+            ],
+          },
+        ],
+        appointment_letter: [
+          {
+            title: "Personal Details",
+            icon: "🪪",
+            fields: ["full_name", "father_name", "address"],
+          },
+          {
+            title: "Posting Details",
+            icon: "🏢",
+            fields: [
+              "employee_code",
+              "designation",
+              "branch",
+              "joining_date",
+              "scale",
+            ],
+          },
+          {
+            title: "CTC Breakdown",
+            icon: "💵",
+            fields: [
+              "annual_ctc",
+              "basic",
+              "hra",
+              "medical",
+              "special_allowance",
+              "da",
+              "pf_deduction",
+              "esi_deduction",
+              "pt_deduction",
+            ],
+          },
+        ],
+        salary_increment: [
+          {
+            title: "Employee Details",
+            icon: "🪪",
+            fields: ["full_name", "designation", "branch", "fy"],
+          },
+          {
+            title: "Increment Details",
+            icon: "💵",
+            fields: [
+              "increment_amount",
+              "increment_words",
+              "new_ctc",
+              "effective_date",
+            ],
+          },
+        ],
+        promotion_letter: [
+          {
+            title: "Employee Details",
+            icon: "🪪",
+            fields: [
+              "full_name",
+              "current_designation",
+              "new_designation",
+              "branch",
+              "fy",
+            ],
+          },
+          {
+            title: "Increment Details",
+            icon: "💵",
+            fields: [
+              "increment_amount",
+              "increment_words",
+              "new_ctc",
+              "effective_date",
+            ],
+          },
+        ],
+        relieving_letter: [
+          {
+            title: "Letter Details",
+            icon: "📋",
+            fields: [
+              "ref_number",
+              "full_name",
+              "designation",
+              "department",
+              "branch",
+            ],
+          },
+          {
+            title: "Employment Record",
+            icon: "📅",
+            fields: [
+              "employee_code",
+              "joining_date",
+              "last_working_date",
+              "last_drawn_salary",
+              "dues_settled_date",
+            ],
+          },
+        ],
+      };
+
+      // Fields that should be FULL width even inside 2-col grid
+      const FULL_WIDTH_FIELDS = new Set([
+        "address",
+        "monthly_salary_words",
+        "yearly_salary_words",
+        "increment_words",
+      ]);
+
+      // Hints shown below specific fields
+      const FIELD_HINTS = {
+        monthly_salary_words: "e.g. Twenty Two Thousand",
+        yearly_salary_words: "e.g. Two Lakhs Sixty Four Thousand",
+        increment_words: "e.g. Ten Thousand",
+        fy: "e.g. 2024-2025",
+        scale: "e.g. Scale – III / Jr. Trainee Assistant",
+        last_drawn_salary: "e.g. 3.0 L/A",
+      };
+
+      // ── Toast ─────────────────────────────────────────────────────────────────
+      function toast(msg, type = "success") {
+        const t = document.createElement("div");
+        t.className = `toast toast-${type}`;
+        t.textContent = msg;
+        document.getElementById("toastWrap").appendChild(t);
+        setTimeout(() => t.remove(), 3500);
+      }
+
+      // ── Load ──────────────────────────────────────────────────────────────────
+      async function loadAll() {
+        try {
+          [docTypes, allDocs] = await Promise.all([
+            api("GET", "/documents/types"),
+            api("GET", "/documents"),
+          ]);
+          buildSidebar();
+          renderStats();
+          renderTable();
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
+
+      // ── Sidebar ───────────────────────────────────────────────────────────────
+      function buildSidebar() {
+        document.getElementById("typeButtons").innerHTML = docTypes
+          .map(
+            (t) => `
+          <button class="doc-type-btn" id="btn-${t.id}" onclick="selectType(${t.id}, this)">
+            <span class="doc-type-icon">${TYPE_ICONS[t.code] || "📄"}</span>
+            <span>${t.label}</span>
+          </button>
+        `,
+          )
+          .join("");
+      }
+
+      function selectType(typeId, el) {
+        activeTypeId = typeId;
+        document
+          .querySelectorAll(".doc-type-btn, .sidebar-all-btn")
+          .forEach((b) => b.classList.remove("active"));
+        el.classList.add("active");
+
+        if (!typeId) {
+          document.getElementById("contentHeading").textContent =
+            "All Documents";
+          document.getElementById("contentSub").textContent =
+            "Create and manage your HR documents";
+          document.getElementById("tableLabel").textContent = "All Documents";
+          document.getElementById("newDocBtn").style.display = "none";
+        } else {
+          const t = docTypes.find((x) => x.id === typeId);
+          document.getElementById("contentHeading").textContent = t.label;
+          document.getElementById("contentSub").textContent =
+            `Create and manage ${t.label}s`;
+          document.getElementById("tableLabel").textContent = t.label;
+          document.getElementById("newDocBtn").style.display = "";
+        }
+        renderStats();
+        renderTable();
+      }
+
+      // ── Stats ─────────────────────────────────────────────────────────────────
+      function renderStats() {
+        const docs = filteredDocs();
+        const c = { draft: 0, pending_approval: 0, approved: 0, rejected: 0 };
+        docs.forEach((d) => {
+          if (c[d.status] !== undefined) c[d.status]++;
+        });
+        document.getElementById("stats").innerHTML = `
+          <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">${docs.length}</div></div>
+          <div class="stat-card"><div class="stat-label">Drafts</div><div class="stat-value">${c.draft}</div></div>
+          <div class="stat-card pending"><div class="stat-label">Pending</div><div class="stat-value">${c.pending_approval}</div></div>
+          <div class="stat-card approved"><div class="stat-label">Approved</div><div class="stat-value">${c.approved}</div></div>
+          <div class="stat-card rejected"><div class="stat-label">Rejected</div><div class="stat-value">${c.rejected}</div></div>
+        `;
+      }
+
+      // ── Table ─────────────────────────────────────────────────────────────────
+      function statusBadge(s) {
+        const map = {
+          draft: "badge-draft",
+          pending_approval: "badge-pending",
+          approved: "badge-approved",
+          rejected: "badge-rejected",
+        };
+        const label = {
+          draft: "Draft",
+          pending_approval: "Pending",
+          approved: "Approved",
+          rejected: "Rejected",
+        };
+        return `<span class="badge ${map[s] || ""}">${label[s] || s}</span>`;
+      }
+      function formatDate(dt) {
+        return new Date(dt).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+      }
+      function filteredDocs() {
+        const q = (
+          document.getElementById("searchInput")?.value || ""
+        ).toLowerCase();
+        return allDocs
+          .filter((d) => !activeTypeId || d.document_type_id === activeTypeId)
+          .filter((d) => d.candidate_name.toLowerCase().includes(q));
+      }
+      function renderTable() {
+        const docs = filteredDocs();
+        const tbody = document.getElementById("docsBody");
+        if (!docs.length) {
+          const msg = activeTypeId
+            ? `No ${docTypes.find((t) => t.id === activeTypeId)?.label || "documents"} yet. Click "+ New Document" to get started.`
+            : "No documents found.";
+          tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">📄</div><p>${msg}</p></div></td></tr>`;
+          return;
+        }
+        tbody.innerHTML = docs
+          .map(
+            (d) => `
+          <tr>
+            <td>
+              <b>${d.candidate_name}</b>
+              ${d.admin_notes ? `<div style="font-size:11px;color:#b8860b;margin-top:2px;display:flex;align-items:center;gap:4px"><span>💬</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px" title="${d.admin_notes.replace(/"/g, "&quot;")}">${d.admin_notes}</span></div>` : ""}
+            </td>
+            <td>${d.document_type_label}</td>
+            <td>${statusBadge(d.status)}</td>
+            <td>v${d.current_version}</td>
+            <td>${formatDate(d.created_at)}</td>
+            <td>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button class="btn btn-outline btn-sm" onclick="openPreview('${d.id}')">👁 Preview</button>
+                ${
+                  d.status === "draft"
+                    ? `<button class="btn btn-outline btn-sm" onclick="openEditDrawer('${d.id}')">Edit</button>
+                                           <button class="btn btn-primary btn-sm" onclick="openSubmitModal('${d.id}')">Submit</button>`
+                    : ""
+                }
+                ${d.status === "approved" ? `<button class="btn btn-success btn-sm" onclick="downloadPdf('${d.id}','${d.candidate_name}')">⬇ PDF</button>` : ""}
+                ${d.status === "rejected" ? `<button class="btn btn-outline btn-sm" onclick="reviseDoc('${d.id}')">Revise</button>` : ""}
+              </div>
+            </td>
+          </tr>
+        `,
+          )
+          .join("");
+      }
+      function filterTable() {
+        renderStats();
+        renderTable();
+      }
+
+      // ── Editor open/close ─────────────────────────────────────────────────────
+      function openCreateDrawer() {
+        if (!activeTypeId) {
+          toast("Select a document type from the sidebar first", "error");
+          return;
+        }
+        editingId = null;
+        const t = docTypes.find((x) => x.id === activeTypeId);
+        _openDrawer(t, null);
+      }
+
+      function openEditDrawer(docId) {
+        const doc = allDocs.find((d) => d.id === docId);
+        if (!doc) return;
+        editingId = docId;
+        const t = docTypes.find((x) => x.id === doc.document_type_id);
+        _openDrawer(t, doc);
+      }
+
+      function _openDrawer(type, existingDoc) {
+        const isEdit = !!existingDoc;
+        document.getElementById("drawerDocType").textContent = type.label;
+        document.getElementById("drawerTitle").textContent = isEdit
+          ? `Edit — ${existingDoc.candidate_name || "Document"}`
+          : `New ${type.label}`;
+        document.getElementById("saveBtnText").textContent = isEdit
+          ? "Save Changes"
+          : "Save Draft";
+
+        // Candidate name
+        document.getElementById("candidateName").value =
+          existingDoc?.candidate_name || "";
+        clearFieldState(document.getElementById("candidateName"));
+
+        // Build dynamic sections
+        const fields =
+          typeof type.schema_fields === "string"
+            ? JSON.parse(type.schema_fields)
+            : type.schema_fields;
+        currentFields = fields;
+
+        // Admin feedback banner
+        const adminBanner = existingDoc?.admin_notes
+          ? `<div class="editor-feedback-banner">
+              <span class="fb-icon">💬</span>
+              <div>
+                <div class="fb-label">Admin Feedback</div>
+                <div class="fb-text">${existingDoc.admin_notes}</div>
+              </div>
+            </div>`
+          : "";
+
+        const sections = FIELD_SECTIONS[type.code];
+        document.getElementById("dynamicSections").innerHTML =
+          adminBanner +
+          (sections
+            ? _renderSections(fields, sections, existingDoc)
+            : _renderFlatSection(fields, existingDoc));
+
+        // Attach input listeners for live preview + validation
+        document
+          .querySelectorAll(".field-input[data-required]")
+          .forEach((el) => {
+            el.addEventListener("blur", () =>
+              validateField(el, el.dataset.required === "true"),
+            );
+            el.addEventListener("input", () => {
+              clearFieldState(el);
+              updateProgress();
+              refreshPreview();
+            });
+          });
+
+        updateProgress();
+
+        // Show editor
+        document.getElementById("editorOverlay").classList.add("open");
+        document.getElementById("drawerBody").scrollTop = 0;
+
+        // Initial preview render
+        refreshPreview();
+
+        // Ctrl+Enter to save
+        document.getElementById("editorOverlay").onkeydown = (e) => {
+          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") saveDocument();
+          if (e.key === "Escape") closeDrawer();
+        };
+
+        // Focus candidate name after animation
+        setTimeout(() => document.getElementById("candidateName").focus(), 220);
+      }
+
+      function closeDrawer() {
+        document.getElementById("editorOverlay").classList.remove("open");
+        editingId = null;
+      }
+
+      // ── Live preview refresh ──────────────────────────────────────────────────
+      let _previewTimer = null;
+      function refreshPreview() {
+        // Debounce 300ms so we don't re-render on every keystroke
+        clearTimeout(_previewTimer);
+        _previewTimer = setTimeout(() => {
+          const typeId = editingId
+            ? allDocs.find((d) => d.id === editingId)?.document_type_id
+            : activeTypeId;
+          const type = docTypes.find((t) => t.id === typeId);
+          if (!type) return;
+
+          // Build a live doc object from current field values
+          const form_data = {};
+          currentFields.forEach((f) => {
+            const el = document.getElementById(`field_${f.name}`);
+            if (el)
+              form_data[f.name] =
+                f.type === "number" ? Number(el.value) : el.value;
+          });
+          const liveDoc = {
+            document_type_code: type.code,
+            document_type_label: type.label,
+            form_data,
+            candidate_name: document
+              .getElementById("candidateName")
+              .value.trim(),
+          };
+
+          const loading = document.getElementById("editorPreviewLoading");
+          const frame = document.getElementById("editorPreviewFrame");
+          loading.style.display = "flex";
+          frame.srcdoc = LetterPreview.render(liveDoc);
+        }, 300);
+      }
+
+      function _renderSections(fields, sections, existingDoc) {
+        const fieldMap = Object.fromEntries(fields.map((f) => [f.name, f]));
+        const rendered = new Set();
+        let html = "";
+
+        for (const sec of sections) {
+          const secFields = sec.fields.map((n) => fieldMap[n]).filter(Boolean);
+          if (!secFields.length) continue;
+          html += `<div class="field-section">
+            <div class="field-section-title"><span class="section-icon">${sec.icon}</span>${sec.title}</div>
+            <div class="fields-grid">
+              ${secFields
+                .map((f) => {
+                  rendered.add(f.name);
+                  return _renderField(f, existingDoc);
+                })
+                .join("")}
+            </div>
+          </div>`;
+        }
+
+        // Leftover fields not in any section
+        const leftover = fields.filter((f) => !rendered.has(f.name));
+        if (leftover.length) {
+          html += `<div class="field-section">
+            <div class="field-section-title"><span class="section-icon">📌</span>Other Details</div>
+            <div class="fields-grid">${leftover.map((f) => _renderField(f, existingDoc)).join("")}</div>
+          </div>`;
+        }
+        return html;
+      }
+
+      function _renderFlatSection(fields, existingDoc) {
+        return `<div class="field-section">
+          <div class="field-section-title"><span class="section-icon">📋</span>Details</div>
+          <div class="fields-grid">${fields.map((f) => _renderField(f, existingDoc)).join("")}</div>
+        </div>`;
+      }
+
+      function _renderField(f, existingDoc) {
+        const val = existingDoc?.form_data?.[f.name] ?? "";
+        const hint = FIELD_HINTS[f.name] || "";
+        const full = FULL_WIDTH_FIELDS.has(f.name) ? "field-full" : "";
+        const itype =
+          f.type === "number"
+            ? "number"
+            : f.type === "date"
+              ? "date"
+              : f.type === "email"
+                ? "email"
+                : "text";
+
+        return `
+          <div class="field-wrap ${full}" id="wrap_${f.name}">
+            <div class="field-label">
+              ${f.label}${f.required ? ' <span class="field-required">*</span>' : ""}
+            </div>
+            <input
+              type="${itype}"
+              class="field-input"
+              id="field_${f.name}"
+              data-name="${f.name}"
+              data-required="${f.required}"
+              data-ftype="${f.type}"
+              placeholder="${hint || f.label}"
+              value="${String(val).replace(/"/g, "&quot;")}"
+              ${f.type === "number" ? 'min="0"' : ""}
+            />
+            ${hint ? `<div class="field-hint">${hint}</div>` : ""}
+            <div class="field-error">${f.label} is required</div>
+          </div>`;
+      }
+
+      // ── Validation & progress ─────────────────────────────────────────────────
+      function validateField(el, required) {
+        const wrap = el.closest(".field-wrap");
+        if (!wrap) return true;
+        const empty = !el.value.trim();
+        if (required && empty) {
+          wrap.classList.add("show-error");
+          el.classList.add("is-invalid");
+          el.classList.remove("is-valid");
+          return false;
+        }
+        wrap.classList.remove("show-error");
+        el.classList.remove("is-invalid");
+        if (!empty) el.classList.add("is-valid");
+        return true;
+      }
+
+      function clearFieldState(el) {
+        el.classList.remove("is-valid", "is-invalid");
+        el.closest(".field-wrap")?.classList.remove("show-error");
+      }
+
+      function updateProgress() {
+        // Count required fields across candidate + dynamic
+        const reqInputs = [
+          document.getElementById("candidateName"),
+          ...document.querySelectorAll(".field-input[data-required='true']"),
+        ].filter(Boolean);
+
+        const total = reqInputs.length;
+        const done = reqInputs.filter((el) => el.value.trim()).length;
+        const pct = total ? Math.round((done / total) * 100) : 0;
+
+        document.getElementById("progressFill").style.width = pct + "%";
+        document.getElementById("progressDone").textContent = done;
+        document.getElementById("progressTotal").textContent = total;
+
+        const hint =
+          done === total
+            ? "All required fields filled ✓"
+            : `${total - done} required field${total - done !== 1 ? "s" : ""} remaining`;
+        document.getElementById("footerHint").textContent = hint;
+      }
+
+      // ── Save ──────────────────────────────────────────────────────────────────
+      async function saveDocument() {
+        // Validate candidate name
+        const nameEl = document.getElementById("candidateName");
+        if (!validateField(nameEl, true)) {
+          nameEl.focus();
+          return;
+        }
+
+        // Validate all required dynamic fields
+        let firstInvalid = null;
+        document
+          .querySelectorAll(".field-input[data-required='true']")
+          .forEach((el) => {
+            const ok = validateField(el, true);
+            if (!ok && !firstInvalid) firstInvalid = el;
+          });
+        if (firstInvalid) {
+          firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
+          firstInvalid.focus();
+          return;
+        }
+
+        const typeId = editingId
+          ? allDocs.find((d) => d.id === editingId)?.document_type_id
+          : activeTypeId;
+
+        const form_data = {};
+        currentFields.forEach((f) => {
+          const el = document.getElementById(`field_${f.name}`);
+          if (el)
+            form_data[f.name] =
+              f.type === "number" ? Number(el.value) : el.value;
+        });
+
+        const btn = document.getElementById("saveBtn");
+        btn.disabled = true;
+        document.getElementById("saveBtnText").textContent = "Saving…";
+
+        try {
+          if (editingId) {
+            await api("PUT", `/documents/${editingId}`, {
+              candidate_name: nameEl.value.trim(),
+              form_data,
+            });
+            toast("Document updated");
+          } else {
+            await api("POST", "/documents", {
+              document_type_id: parseInt(typeId),
+              candidate_name: nameEl.value.trim(),
+              form_data,
+            });
+            toast("Draft created successfully");
+          }
+          closeDrawer();
+          loadAll();
+        } catch (e) {
+          toast(e.message, "error");
+        } finally {
+          btn.disabled = false;
+          document.getElementById("saveBtnText").textContent = editingId
+            ? "Save Changes"
+            : "Save Draft";
+        }
+      }
+
+      // ── Preview drawer ────────────────────────────────────────────────────────
+      function switchPvTab(tab) {
+        document
+          .getElementById("pvTabPreview")
+          .classList.toggle("active", tab === "preview");
+        document
+          .getElementById("pvTabHistory")
+          .classList.toggle("active", tab === "history");
+        document
+          .getElementById("pvPanelPreview")
+          .classList.toggle("active", tab === "preview");
+        document
+          .getElementById("pvPanelHistory")
+          .classList.toggle("active", tab === "history");
+      }
+
+      async function openPreview(docId) {
+        const doc = allDocs.find((d) => d.id === docId);
+        if (!doc) return;
+
+        document.getElementById("pvDocType").textContent =
+          doc.document_type_label;
+        document.getElementById("pvStatusBadge").innerHTML = statusBadge(
+          doc.status,
+        );
+        document.getElementById("pvCandidate").textContent = doc.candidate_name;
+        document.getElementById("pvSub").innerHTML =
+          `<span>v${doc.current_version}</span><span>·</span><span>${formatDate(doc.created_at)}</span>`;
+
+        // Always start on Preview tab
+        switchPvTab("preview");
+
+        // Render preview
+        document.getElementById("pvLoading").style.display = "flex";
+        document.getElementById("pvFrame").srcdoc = LetterPreview.render(doc);
+
+        // Footer
+        const footer = document.getElementById("pvFooter");
+        if (doc.status === "approved") {
+          footer.innerHTML = `<div style="display:flex;justify-content:flex-end">
+            <button class="btn btn-success" onclick="downloadPdf('${doc.id}','${doc.candidate_name}')">⬇ Download PDF</button>
+          </div>`;
+        } else if (doc.status === "pending_approval") {
+          footer.innerHTML = `<p style="font-size:12.5px;color:var(--orange);text-align:center;font-weight:500">
+            ⏳ Awaiting admin approval. Download available once approved.
+          </p>`;
+        } else if (doc.status === "rejected") {
+          let adminFeedback = "";
+          if (doc.admin_notes) {
+            adminFeedback = `<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#856404;line-height:1.5">
+              <b style="display:block;font-size:11px;margin-bottom:3px">💬 Admin Feedback</b>${doc.admin_notes}
+            </div>`;
+          }
+          footer.innerHTML = `${adminFeedback}
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:12.5px;color:var(--red);font-weight:500">❌ Rejected — please revise and resubmit.</span>
+              <button class="btn btn-outline btn-sm" onclick="reviseDoc('${doc.id}')">Revise</button>
+            </div>`;
+        } else {
+          footer.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:12.5px;color:var(--muted)">Draft — submit for admin approval.</span>
+            <button class="btn btn-primary btn-sm" onclick="closePvDrawer();openSubmitModal('${doc.id}')">Submit</button>
+          </div>`;
+        }
+
+        document.getElementById("pvOverlay").classList.add("open");
+        // Load history in background
+        loadVersionHistory(docId);
+      }
+
+      async function loadVersionHistory(docId) {
+        const el = document.getElementById("pvHistory");
+        el.innerHTML = `<div class="pv-history-loading">Loading history…</div>`;
+        try {
+          const logs = await api("GET", `/documents/${docId}/approval-logs`);
+          if (!logs.length) {
+            el.innerHTML = `<div class="pv-history-loading">No review history yet.</div>`;
+            return;
+          }
+          // logs are DESC (latest first) — reverse to show oldest first (chronological)
+          const chronological = [...logs].reverse();
+          el.innerHTML = chronological
+            .map((log, i) => {
+              const isApproved = log.action === "approved";
+              const iconClass = isApproved ? "approved" : "rejected";
+              const icon = isApproved ? "✓" : "✕";
+              const actionLabel = isApproved ? "Approved" : "Rejected";
+              const commentClass = isApproved ? "is-approval" : "is-rejection";
+              const versionNum = i + 1;
+              const dt = new Date(log.created_at).toLocaleString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+              return `
+              <div class="history-item">
+                <div class="history-icon ${iconClass}">${icon}</div>
+                <div class="history-body">
+                  <div class="history-action">${actionLabel} <span style="color:var(--muted);font-weight:400;font-size:12px">· v${versionNum}</span></div>
+                  <div class="history-meta">by ${log.reviewer_name} · ${dt}</div>
+                  ${
+                    log.comments
+                      ? `<div class="history-comment ${commentClass}">${log.comments}</div>`
+                      : `<div style="font-size:12px;color:var(--muted);font-style:italic">No comment left</div>`
+                  }
+                </div>
+              </div>`;
+            })
+            .join("");
+        } catch (e) {
+          el.innerHTML = `<div class="pv-history-loading">Could not load history.</div>`;
+        }
+      }
+
+      function closePvDrawer() {
+        document.getElementById("pvOverlay").classList.remove("open");
+      }
+
+      // ── Submit for approval ───────────────────────────────────────────────────
+      function openSubmitModal(docId) {
+        submitDocId = docId;
+        document.getElementById("submitModal").classList.add("open");
+        document.getElementById("confirmSubmitBtn").onclick = async () => {
+          try {
+            await api("POST", `/documents/${submitDocId}/submit`);
+            toast("Submitted for approval");
+            closeSubmitModal();
+            loadAll();
+          } catch (e) {
+            toast(e.message, "error");
+          }
+        };
+      }
+      function closeSubmitModal() {
+        document.getElementById("submitModal").classList.remove("open");
+        submitDocId = null;
+      }
+
+      // ── Download PDF ──────────────────────────────────────────────────────────
+      async function downloadPdf(docId, candidateName) {
+        try {
+          const res = await fetch(`/documents/${docId}/pdf`, {
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+          if (!res.ok) throw new Error("Download failed");
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${candidateName.replace(/ /g, "_")}.pdf`;
+          a.click();
+          URL.revokeObjectURL(url);
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
+
+      async function reviseDoc(docId) {
+        if (!confirm("Move this document back to draft for editing?")) return;
+        try {
+          await api("POST", `/documents/${docId}/revise`);
+          toast("Document moved to draft");
+          closePvDrawer();
+          await loadAll();
+          // Auto-open edit drawer
+          setTimeout(() => openEditDrawer(docId), 300);
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
+
+      loadAll();
+    </script>
+
+    <!-- ── Preview Drawer ── -->
+    <style>
+      .pv-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 15, 30, 0.4);
+        backdrop-filter: blur(2px);
+        z-index: 400;
+      }
+      .pv-overlay.open {
+        display: block;
+      }
+      .pv-drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 600px;
+        max-width: 100vw;
+        height: 100dvh;
+        background: #fff;
+        box-shadow: -8px 0 40px rgba(31, 56, 100, 0.15);
+        display: flex;
+        flex-direction: column;
+        transform: translateX(100%);
+        transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 401;
+      }
+      .pv-overlay.open .pv-drawer {
+        transform: translateX(0);
+      }
+      .pv-header {
+        padding: 16px 20px 13px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .pv-pill {
+        background: #eef1fb;
+        color: var(--navy);
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 2px 9px;
+        border-radius: 20px;
+        display: inline-block;
+        margin-bottom: 5px;
+      }
+      .pv-name {
+        font-family: "DM Serif Display", serif;
+        font-size: 19px;
+        color: var(--navy);
+        margin-bottom: 3px;
+      }
+      .pv-sub {
+        font-size: 11.5px;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .pv-close {
+        background: #f4f6fb;
+        border: none;
+        border-radius: 8px;
+        width: 30px;
+        height: 30px;
+        font-size: 15px;
+        cursor: pointer;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: background 0.14s;
+      }
+      .pv-close:hover {
+        background: #e0e5f5;
+        color: var(--navy);
+      }
+
+      /* ── Tabs ── */
+      .pv-tabs {
+        display: flex;
+        border-bottom: 2px solid var(--border);
+        flex-shrink: 0;
+        background: #fff;
+      }
+      .pv-tab {
+        flex: 1;
+        padding: 10px 0;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--muted);
+        cursor: pointer;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+      .pv-tab:hover {
+        color: var(--navy);
+        background: #f8f9fd;
+      }
+      .pv-tab.active {
+        color: var(--navy);
+        border-bottom-color: var(--navy);
+        font-weight: 600;
+      }
+
+      /* ── Tab panels ── */
+      .pv-tab-content {
+        display: none;
+        flex: 1;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .pv-tab-content.active {
+        display: flex;
+      }
+
+      .pv-body {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+        background: #f4f6fb;
+      }
+      .pv-iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+      .pv-loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f4f6fb;
+        font-size: 13px;
+        color: var(--muted);
+        gap: 8px;
+      }
+
+      /* ── History panel ── */
+      .pv-history-wrap {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px 24px;
+      }
+      .pv-history-loading {
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+        padding: 40px 0;
+      }
+      .history-item {
+        display: flex;
+        gap: 14px;
+        padding-bottom: 24px;
+        position: relative;
+      }
+      .history-item:not(:last-child)::before {
+        content: "";
+        position: absolute;
+        left: 15px;
+        top: 32px;
+        bottom: 0;
+        width: 2px;
+        background: var(--border);
+      }
+      .history-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1;
+      }
+      .history-icon.submitted {
+        background: #eef1fb;
+        color: var(--navy);
+      }
+      .history-icon.approved {
+        background: #e2f8ee;
+        color: var(--green);
+      }
+      .history-icon.rejected {
+        background: #fde8e8;
+        color: var(--red);
+      }
+      .history-body {
+        flex: 1;
+        min-width: 0;
+        padding-top: 5px;
+      }
+      .history-action {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 2px;
+      }
+      .history-meta {
+        font-size: 11.5px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      .history-comment {
+        font-size: 12.5px;
+        color: #444;
+        background: #f4f6fb;
+        border-left: 3px solid var(--border);
+        border-radius: 0 6px 6px 0;
+        padding: 7px 12px;
+        line-height: 1.55;
+      }
+      .history-comment.is-rejection {
+        border-left-color: var(--red);
+        background: #fef5f5;
+      }
+      .history-comment.is-approval {
+        border-left-color: var(--green);
+        background: #f2fbf6;
+      }
+
+      .pv-footer {
+        padding: 14px 20px;
+        border-top: 1px solid var(--border);
+        flex-shrink: 0;
+        background: #fafbfd;
+      }
+    </style>
+
+    <div
+      class="pv-overlay"
+      id="pvOverlay"
+      onclick="if (event.target === this) closePvDrawer();"
+    >
+      <div class="pv-drawer">
+        <div class="pv-header">
+          <div>
+            <div>
+              <span class="pv-pill" id="pvDocType"></span>
+              <span id="pvStatusBadge"></span>
+            </div>
+            <div class="pv-name" id="pvCandidate"></div>
+            <div class="pv-sub" id="pvSub"></div>
+          </div>
+          <button class="pv-close" onclick="closePvDrawer()">✕</button>
+        </div>
+
+        <!-- Tab bar -->
+        <div class="pv-tabs">
+          <button
+            class="pv-tab active"
+            id="pvTabPreview"
+            onclick="switchPvTab('preview')"
+          >
+            📄 Preview
+          </button>
+          <button
+            class="pv-tab"
+            id="pvTabHistory"
+            onclick="switchPvTab('history')"
+          >
+            🕓 History
+          </button>
+        </div>
+
+        <!-- Preview tab -->
+        <div class="pv-tab-content active" id="pvPanelPreview">
+          <div class="pv-body">
+            <div class="pv-loading" id="pvLoading">
+              <span>⏳</span> Rendering preview…
+            </div>
+            <iframe
+              class="pv-iframe"
+              id="pvFrame"
+              sandbox="allow-same-origin"
+              onload="
+                document.getElementById('pvLoading').style.display = 'none'
+              "
+            ></iframe>
+          </div>
+        </div>
+
+        <!-- History tab -->
+        <div class="pv-tab-content" id="pvPanelHistory">
+          <div class="pv-history-wrap" id="pvHistory">
+            <div class="pv-history-loading">Loading history…</div>
+          </div>
+        </div>
+
+        <div class="pv-footer" id="pvFooter"></div>
+      </div>
+    </div>
+  </body>
+</html>

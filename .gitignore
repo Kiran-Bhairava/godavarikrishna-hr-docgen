@@ -1,0 +1,13 @@
+.env
+venvs
+migrations
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+db.sqlite3
+*.log
+*.pot
+generated_pdfs
+gk_letter_head.pdf
