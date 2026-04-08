@@ -167,29 +167,47 @@ const LetterPreview = (() => {
     const monthly = d.monthly_salary || "";
     const yearly  = monthly ? (Number(monthly) * 12).toLocaleString("en-IN") : "";
 
-    return wrap(`
-      <div class="doc-title">LETTER OF EMPLOYMENT</div>
-      <div class="title-rule"></div>
+    function n(k) { return Number(d[k] || 0); }
+    const basic  = n("basic");
+    const hra    = n("hra");
+    const convey = n("conveyance_allowance");
+    const spl    = n("special_allowance");
+    const gross  = basic + hra + convey + spl;
+    const empPF  = n("employer_pf");
+    const ctc    = gross + empPF;
+    function fmt(v) { return v ? Number(v).toLocaleString("en-IN") : ""; }
 
-      <div class="date-line"><b>Date:</b> ${dateStr}</div>
-      <div class="to-block">
-        To,<br>
-        <b>Mr./Ms. ${d.full_name || ""},</b>
+    return wrap(`
+      <!-- Title: CENTER, Bold+Underline -->
+      <div style="text-align:center;font-size:12pt;font-weight:700;
+                  text-decoration:underline;text-underline-offset:3px;
+                  letter-spacing:.06em;color:#1F3864;margin-bottom:2px">
+        LETTER OF EMPLOYMENT
+      </div>
+      <div style="height:1.5px;background:#1F3864;margin-bottom:14px"></div>
+
+      <!-- Date: RIGHT, Bold -->
+      <div style="text-align:right;font-weight:700;font-size:10pt;margin-bottom:10px">
+        Date: ${dateStr}
       </div>
 
-      <p>In continuation of our discussions on possible employment with M/s Godavari Krishna Co-Op Society Limited Vijayawada, we are pleased to make you an offer as <b>${d.designation || ""}</b> Initially as per the norms fixed in the Appointment letter and Duty list. Your complete appointment letter will be processed on the date of joining post completion of your joining formalities with Godavari Krishna Co-Operative Society Limited.</p>
+      <!-- To block -->
+      <div style="font-weight:700;font-size:10pt;margin-bottom:4px;padding-left:8px">To,</div>
+      <div style="font-weight:700;font-size:10pt;margin-bottom:14px;padding-left:40px">Mr./Ms. ${d.full_name || ""},</div>
 
-      <p>Your fixed remuneration will be INR <b>${monthly}/-</b> (in words Rupees <b>${d.monthly_salary_words || ""}</b> only) per month and INR <b>${yearly}/-</b> (in words Rupees <b>${d.yearly_salary_words || ""}</b> only) per annum.</p>
+      <p style="text-align:justify;padding-left:8px">In continuation of our discussions on possible employment with M/s Godavari Krishna Co-Op Society Limited Vijayawada, we are pleased to make you an offer as <b>${d.designation || ""}</b> Initially as per the norms fixed in the Appointment letter and Duty list. Your complete appointment letter will be processed on the date of joining post completion of your joining formalities with Godavari Krishna Co-Operative Society Limited.</p>
 
-      <p><i>(Your remuneration details are attached in <b>Annexure – I</b> for your reference).</i></p>
+      <p style="text-align:justify;padding-left:8px">Your fixed remuneration will be INR <b><u>${monthly}/-</u></b> (in words Rupees <b><u>${d.monthly_salary_words || ""}</u></b> only) per month and INR <b>${yearly}/-</b> (in words Rupees <b><u>${d.yearly_salary_words || ""}</u></b> only) per annum.</p>
 
-      <p>It is mandatory to achieve your monthly set target of business given by your superior, to justify your monthly fixed pay. Your career with us is based on your performance and achievement of the set business goals and Objectives of the Organization. As discussed with you during your interview, your 'Salary / Position' or maybe both will be revised after the first 6 months after you join, such revision shall be purely based on the level of your performance in these first 6 months.</p>
+      <p style="text-align:justify;padding-left:8px;font-style:italic">(Your remuneration details are attached in Annexure – II for your reference).</p>
 
-      <p>If the Employee wants to resign from their duties/Job role within One year of their service in such case the Employee has to serve three months of Notice Period or has to pay three months of their Salary to the Society. If the Employee wants to resign from their duties/Job role after one year of their service in such case the Employee has to serve two months of Notice Period or has to pay two months of their Salary to the Society.</p>
+      <p style="text-align:justify;padding-left:8px">It is mandatory to achieve your monthly set target of business given by your superior, to justify your monthly fixed pay. Your career with us is based on your performance and achievement of the set business goals and Objectives of the Organization. As discussed with you during your interview, your 'Salary / Position' or maybe both will be revised after the first 6 months after you join, such revision shall be purely based on the level of your performance in these first 6 months.</p>
 
-      <p>You have to submit the following details for generating your employment with the Society.</p>
+      <p style="text-align:justify;padding-left:8px">If the Employee wants to resign from their duties/Job role within One year of their service in such case the Employee has to serve three months of Notice Period or has to pay three months of their Salary to the Society. If the Employee wants to resign from their duties/Job role after one year of their service in such case the Employee has to serve two months of Notice Period or has to pay two months of their Salary to the Society. At the time of joining, you are advised to carry your true copies of all your credentials along with the list of documents mentioned below.</p>
 
-      <!-- Required Documents — yellow header, ➤ bullets, justify, flows to next page -->
+      <p style="text-align:justify;padding-left:8px">You have to submit the following details for generating your employment with the Society.</p>
+
+      <!-- Required Documents — yellow header, ➤ bullets, justify, page-break-inside:auto -->
       <table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:9.8pt;page-break-inside:auto">
         <thead>
           <tr>
@@ -223,24 +241,97 @@ const LetterPreview = (() => {
         </tbody>
       </table>
 
-      <p><i>(You should submit these details within <b>7 days</b> from the date of receipt of this OFFER.)</i></p>
+      <p style="font-size:9.5pt">(You should submit these details within <b>7 days</b> from the date of receipt of this OFFER.)</p>
       <p>This is only an offer of employment and you shall communicate your acceptance of this offer within <b>3 days</b> from the receipt thereof, failing which this offer shall stand cancelled.</p>
 
-      <div class="annex-title">Annexure – I</div>
-      <table>
+      <!-- Annexure-I: LEFT Bold+Underline title, ALL CENTER table -->
+      <div style="font-weight:700;text-decoration:underline;text-underline-offset:3px;font-size:10.5pt;margin:14px 0 6px">Annexure-I</div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:9.5pt">
         <tbody>
-          <tr><td class="cell-label">Name</td><td>${d.full_name || ""}</td></tr>
-          <tr class="row-alt"><td class="cell-label">Designation</td><td>${d.designation || ""}</td></tr>
-          <tr><td class="cell-label">Grade</td><td>${d.grade || ""}</td></tr>
-          <tr class="row-alt"><td class="cell-label">Department</td><td>${d.department || ""}</td></tr>
-          <tr><td class="cell-label">Date of Birth</td><td>${fmtDate(d.date_of_birth)}</td></tr>
-          <tr class="row-alt"><td class="cell-label">Father Name</td><td>${d.father_name || ""}</td></tr>
+          <tr>
+            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center;width:38%">Name</td>
+            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">${d.full_name || ""}</td>
+          </tr>
+          <tr style="background:#f4f5f9">
+            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">Designation</td>
+            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">${d.designation || ""}</td>
+          </tr>
+          <tr>
+            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">Cadre</td>
+            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">${d.cadre || ""}</td>
+          </tr>
+          <tr style="background:#f4f5f9">
+            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">Scale</td>
+            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">${d.scale || ""}</td>
+          </tr>
+          <tr>
+            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">Department</td>
+            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">${d.department || ""}</td>
+          </tr>
+          <tr style="background:#f4f5f9">
+            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">Date of Birth</td>
+            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">${fmtDate(d.date_of_birth)}</td>
+          </tr>
         </tbody>
       </table>
-      <div class="note">NOTE: PF, ESI, and Professional Tax will be deducted as applicable.</div>
+
+      <!-- Annexure-II: LEFT Bold+Underline title, ALL CENTER 3-col table -->
+      <div style="font-weight:700;text-decoration:underline;text-underline-offset:3px;font-size:10.5pt;margin:14px 0 6px">Annexure-II</div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:10px;font-size:9.5pt">
+        <thead>
+          <tr>
+            <th style="border:1px solid #aaa;padding:6px 8px;text-align:center;background:#1F3864;color:#fff">Pay Component</th>
+            <th style="border:1px solid #aaa;padding:6px 8px;text-align:center;background:#1F3864;color:#fff">Monthly Amount</th>
+            <th style="border:1px solid #aaa;padding:6px 8px;text-align:center;background:#1F3864;color:#fff">Annual Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>Fixed</b></td>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>${fmt(Number(monthly) || 0)}</b></td>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>${yearly}</b></td>
+          </tr>
+          <tr style="background:#f4f5f9">
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">Basic</td>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(basic)}</td>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(basic*12)}</td>
+          </tr>
+          <tr>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">HRA</td>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(hra)}</td>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(hra*12)}</td>
+          </tr>
+          <tr style="background:#f4f5f9">
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">Conveyance Allowance</td>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(convey)}</td>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(convey*12)}</td>
+          </tr>
+          <tr>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">Special Allowance</td>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(spl)}</td>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(spl*12)}</td>
+          </tr>
+          <tr style="background:#d9e1f2">
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>Gross Salary</b></td>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>${fmt(gross)}</b></td>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>${fmt(gross*12)}</b></td>
+          </tr>
+          <tr style="background:#f4f5f9">
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">Employer PF</td>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(empPF)}</td>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(empPF*12)}</td>
+          </tr>
+          <tr style="background:#d9e1f2">
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>CTC</b></td>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>${fmt(ctc)}</b></td>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>${fmt(ctc*12)}</b></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="font-weight:700;font-size:9pt;margin-top:6px">*NOTE: PF, ESI, and Professional Tax will be deducted as applicable</div>
     `);
   }
-
   // ── 2. Appointment Letter ──────────────────────────────────────────────────
   function appointmentLetter(d, dateStr) {
     function n(k) { return Number(d[k] || 0); }
