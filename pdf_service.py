@@ -17,7 +17,7 @@ from pypdf import PdfReader, PdfWriter
 W, H = A4
 
 LETTERHEAD_PATH = os.getenv("LETTERHEAD_PATH", "gk_letter_head.pdf")
-PDF_OUTPUT_DIR  = os.getenv("PDF_OUTPUT_DIR",  "generated_pdfs")
+PDF_OUTPUT_DIR  = os.getenv("PDF_OUTPUT_DIR",  "/tmp/generated_pdfs")
 
 
 # ── Shared helpers ────────────────────────────────────────────────────────────

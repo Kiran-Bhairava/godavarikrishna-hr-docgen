@@ -392,12 +392,34 @@ async def download_pdf(
         raise HTTPException(status_code=403, detail="Access denied")
     if doc["status"] != "approved":
         raise HTTPException(status_code=400, detail="PDF is only available for approved documents")
-    if not doc["pdf_path"] or not os.path.exists(doc["pdf_path"]):
-        raise HTTPException(status_code=404, detail="PDF file not found")
+    # /tmp is ephemeral on Vercel — regenerate if file missing
+    pdf_path = doc["pdf_path"]
+    if not pdf_path or not os.path.exists(pdf_path):
+        doc_full = await conn.fetchrow(
+            """
+            SELECT d.*, dt.code AS doc_type_code
+            FROM documents d
+            JOIN document_types dt ON dt.id = d.document_type_id
+            WHERE d.id = $1
+            """,
+            doc_id
+        )
+        if not doc_full:
+            raise HTTPException(status_code=404, detail="PDF file not found")
+        import json as _json
+        form_data = _json.loads(doc_full["form_data"]) if isinstance(doc_full["form_data"], str) else doc_full["form_data"]
+        try:
+            pdf_path = generate_pdf(
+                document_id=str(doc_full["id"]),
+                doc_type_code=doc_full["doc_type_code"],
+                form_data=form_data,
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"PDF regeneration failed: {str(e)}")
 
     filename = f"{doc['candidate_name'].replace(' ', '_')}.pdf"
     return FileResponse(
-        path=doc["pdf_path"],
+        path=pdf_path,
         media_type="application/pdf",
         filename=filename,
     )
