@@ -17,6 +17,7 @@ from pypdf import PdfReader, PdfWriter
 W, H = A4
 
 LETTERHEAD_PATH = os.getenv("LETTERHEAD_PATH", "gk_letter_head.pdf")
+WATERMARK_PATH  = os.getenv("WATERMARK_PATH",  "watermark.jpeg")
 PDF_OUTPUT_DIR  = os.getenv("PDF_OUTPUT_DIR",  "/tmp/generated_pdfs")
 
 
@@ -55,26 +56,31 @@ def _fmt_date(val: str) -> str:
 
 
 def _make_white_mask_pdf() -> bytes:
-    """Creates white rectangle to block watermark in content area while preserving header/footer.
-    
-    Based on actual Godavari Krishna letterhead:
-    - Header: ~50mm from top (blue section with logo/text)
-    - Footer: ~45mm from bottom (yellow+blue wave)
-    - Mask covers middle content area only
+    """White mask over content area + watermark.jpeg centered on top.
+    Matches the live preview: faint hibiscus flower centered in the body.
+    The image is already pre-faded, drawn at alpha 0.55 to match browser preview.
     """
     buf = io.BytesIO()
     c = rl_canvas.Canvas(buf, pagesize=A4)
+
+    # White mask — wipes the letterhead's own background in the content band
+    mask_y      = 128   # pts from bottom (45mm footer)
+    mask_height = 572   # pts content area
     c.setFillColorRGB(1, 1, 1)
-    
-    # A4 height = 842pts = 297mm
-    # Top: 50mm (~142pts) for header
-    # Bottom: 45mm (~128pts) for footer
-    # Mask height = 842 - 142 - 128 = 572pts
-    
-    mask_y = 128  # 45mm from bottom for footer
-    mask_height = 572  # Content area
-    
     c.rect(30, mask_y, W - 60, mask_height, fill=1, stroke=0)
+
+    # Draw watermark.jpeg centered in the content area — matches live preview
+    if os.path.exists(WATERMARK_PATH):
+        wm_size = 340   # pts (~120mm), visually matches preview
+        wm_x    = (W - wm_size) / 2
+        wm_y    = mask_y + (mask_height - wm_size) / 2
+        c.saveState()
+        c.setFillAlpha(0.55)
+        c.drawImage(WATERMARK_PATH, wm_x, wm_y,
+                    width=wm_size, height=wm_size,
+                    mask="auto", preserveAspectRatio=True)
+        c.restoreState()
+
     c.save()
     return buf.getvalue()
 
