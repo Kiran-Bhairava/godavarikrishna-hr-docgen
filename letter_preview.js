@@ -167,6 +167,21 @@ const LetterPreview = (() => {
     const monthly = d.monthly_salary || "";
     const yearly  = monthly ? (Number(monthly) * 12).toLocaleString("en-IN") : "";
 
+    // Annexure-II salary table
+    function n(k) { return Number(d[k] || 0); }
+    const basic     = n("basic");
+    const hra       = n("hra");
+    const convey    = n("conveyance_allowance");
+    const spl       = n("special_allowance");
+    const gross     = basic + hra + convey + spl;
+    const empPF     = n("employer_pf");
+    const ctc       = gross + empPF;
+    const grossAnn  = gross * 12;
+    const empPFAnn  = empPF * 12;
+    const ctcAnn    = ctc * 12;
+
+    function fmt(v) { return v ? Number(v).toLocaleString("en-IN") : ""; }
+
     return wrap(`
       <div class="doc-title">LETTER OF EMPLOYMENT</div>
       <div class="title-rule"></div>
@@ -181,11 +196,11 @@ const LetterPreview = (() => {
 
       <p>Your fixed remuneration will be INR <b>${monthly}/-</b> (in words Rupees <b>${d.monthly_salary_words || ""}</b> only) per month and INR <b>${yearly}/-</b> (in words Rupees <b>${d.yearly_salary_words || ""}</b> only) per annum.</p>
 
-      <p><i>(Your remuneration details are attached in <b>Annexure – I</b> for your reference).</i></p>
+      <p><i>(Your remuneration details are attached in <b>Annexure – II</b> for your reference).</i></p>
 
       <p>It is mandatory to achieve your monthly set target of business given by your superior, to justify your monthly fixed pay. Your career with us is based on your performance and achievement of the set business goals and Objectives of the Organization. As discussed with you during your interview, your 'Salary / Position' or maybe both will be revised after the first 6 months after you join, such revision shall be purely based on the level of your performance in these first 6 months.</p>
 
-      <p>If the Employee wants to resign from their duties/Job role within One year of their service in such case the Employee has to serve three months of Notice Period or has to pay three months of their Salary to the Society. If the Employee wants to resign from their duties/Job role after one year of their service in such case the Employee has to serve two months of Notice Period or has to pay two months of their Salary to the Society.</p>
+      <p>If the Employee wants to resign from their duties/Job role within One year of their service in such case the Employee has to serve three months of Notice Period or has to pay three months of their Salary to the Society. If the Employee wants to resign from their duties/Job role after one year of their service in such case the Employee has to serve two months of Notice Period or has to pay two months of their Salary to the Society. At the time of joining, you are advised to carry your true copies of all your credentials along with the list of documents mentioned below.</p>
 
       <p>You have to submit the following details for generating your employment with the Society.</p>
 
@@ -193,29 +208,46 @@ const LetterPreview = (() => {
         <thead><tr><th colspan="2">Required Documents</th></tr></thead>
         <tbody>
           <tr><td>Aadhaar Card &amp; PAN Card.</td><td>2 Nationalised Bank Cheques.</td></tr>
-          <tr class="row-alt"><td>3 Passport Size Photos (White Background).</td><td>Previous Employment Offer Letters.</td></tr>
-          <tr><td>Academic Certificates: SSC, Inter, Degree &amp; PG if any.</td><td>Pay Slips: Latest 3 Months and Salary Account Statement.</td></tr>
-          <tr class="row-alt"><td>Police Verification Certificate (15 Days will be given; can be obtained through E Seva).</td><td>Relieving Letter.</td></tr>
-          <tr><td>Nominee Aadhaar Card &amp; PAN Card (For PF &amp; ESI).</td><td>Physical fitness certificate by Govt. physician.</td></tr>
-          <tr class="row-alt"><td>PF service history &amp; PF passbook Statement (Available in UAN Login).</td><td></td></tr>
+          <tr class="row-alt"><td>3 Passport Size Photos (White Background).</td><td>Bank A/C Passbook Xerox (Front Page) or Cancelled Cheque.</td></tr>
+          <tr><td>Academic Certificates: SSC, Inter, Degree &amp; PG if any.</td><td>Previous Employment Offer Letters.</td></tr>
+          <tr class="row-alt"><td>Police Verification Certificate (15 Days will be given; can be obtained through E Seva).</td><td>Pay Slips: Latest 3 Months and Salary Account Statement.</td></tr>
+          <tr><td>Nominee Passport Size Photo, Aadhaar Card &amp; PAN Card (For PF &amp; ESI).</td><td>Relieving Letter.</td></tr>
+          <tr class="row-alt"><td>PF service history &amp; PF passbook Statement (Available in UAN Login).</td><td>Physical fitness certificate by Govt. physician.</td></tr>
         </tbody>
       </table>
 
       <p><i>(You should submit these details within <b>7 days</b> from the date of receipt of this OFFER.)</i></p>
       <p>This is only an offer of employment and you shall communicate your acceptance of this offer within <b>3 days</b> from the receipt thereof, failing which this offer shall stand cancelled.</p>
 
-      <div class="annex-title">Annexure – I</div>
+      <div class="annex-title">Annexure-I</div>
       <table>
         <tbody>
           <tr><td class="cell-label">Name</td><td>${d.full_name || ""}</td></tr>
           <tr class="row-alt"><td class="cell-label">Designation</td><td>${d.designation || ""}</td></tr>
-          <tr><td class="cell-label">Grade</td><td>${d.grade || ""}</td></tr>
-          <tr class="row-alt"><td class="cell-label">Department</td><td>${d.department || ""}</td></tr>
-          <tr><td class="cell-label">Date of Birth</td><td>${fmtDate(d.date_of_birth)}</td></tr>
-          <tr class="row-alt"><td class="cell-label">Father Name</td><td>${d.father_name || ""}</td></tr>
+          <tr><td class="cell-label">Cadre</td><td>${d.cadre || ""}</td></tr>
+          <tr class="row-alt"><td class="cell-label">Scale</td><td>${d.scale || ""}</td></tr>
+          <tr><td class="cell-label">Department</td><td>${d.department || ""}</td></tr>
+          <tr class="row-alt"><td class="cell-label">Date of Birth</td><td>${fmtDate(d.date_of_birth)}</td></tr>
         </tbody>
       </table>
-      <div class="note">NOTE: PF, ESI, and Professional Tax will be deducted as applicable.</div>
+
+      <div class="annex-title">Annexure-II</div>
+      <table>
+        <thead>
+          <tr><th>Pay Component</th><th>Monthly Amount</th><th>Annual Amount</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="cell-label"><b>Fixed</b></td><td><b>${fmt(monthly)}</b></td><td><b>${yearly}</b></td></tr>
+          <tr class="row-alt"><td class="cell-label">Basic</td><td>${fmt(basic)}</td><td>${fmt(basic*12)}</td></tr>
+          <tr><td class="cell-label">HRA</td><td>${fmt(hra)}</td><td>${fmt(hra*12)}</td></tr>
+          <tr class="row-alt"><td class="cell-label">Conveyance Allowance</td><td>${fmt(convey)}</td><td>${fmt(convey*12)}</td></tr>
+          <tr><td class="cell-label">Special Allowance</td><td>${fmt(spl)}</td><td>${fmt(spl*12)}</td></tr>
+          <tr class="row-alt"><td class="cell-label"><b>Gross Salary</b></td><td><b>${fmt(gross)}</b></td><td><b>${fmt(grossAnn)}</b></td></tr>
+          <tr><td class="cell-label">Employer PF</td><td>${fmt(empPF)}</td><td>${fmt(empPFAnn)}</td></tr>
+          <tr class="row-alt"><td class="cell-label"><b>CTC</b></td><td><b>${fmt(ctc)}</b></td><td><b>${fmt(ctcAnn)}</b></td></tr>
+        </tbody>
+      </table>
+      <div class="note">*NOTE: PF, ESI, and Professional Tax will be deducted as applicable.</div>
     `);
   }
 

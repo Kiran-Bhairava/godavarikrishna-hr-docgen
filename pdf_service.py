@@ -12,7 +12,6 @@ from reportlab.platypus.frames import Frame
 from reportlab.platypus.doctemplate import BaseDocTemplate, PageTemplate
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
 from reportlab.pdfgen import canvas as rl_canvas
-from reportlab.lib.utils import ImageReader
 from pypdf import PdfReader, PdfWriter
 
 W, H = A4
@@ -20,14 +19,6 @@ W, H = A4
 LETTERHEAD_PATH = os.getenv("LETTERHEAD_PATH", "gk_letter_head.pdf")
 WATERMARK_PATH  = os.getenv("WATERMARK_PATH",  "watermark.jpeg")
 PDF_OUTPUT_DIR  = os.getenv("PDF_OUTPUT_DIR",  "/tmp/generated_pdfs")
-
-# ── Module-level cache — built once on first use, reused on every request ──
-# Avoids re-reading files and re-rendering the mask PDF on every generation.
-_CACHE = {
-    "lh_bytes":    None,   # raw letterhead PDF bytes
-    "mask_bytes":  None,   # rendered mask+watermark PDF bytes
-    "wm_reader":   None,   # ImageReader for watermark.jpeg
-}
 
 
 # ── Shared helpers ────────────────────────────────────────────────────────────
@@ -65,26 +56,27 @@ def _fmt_date(val: str) -> str:
 
 
 def _make_white_mask_pdf() -> bytes:
-    """White mask + watermark. Uses cached ImageReader — JPEG decoded once only."""
-    # Cache the watermark ImageReader — decodes JPEG once for the process lifetime
-    if _CACHE["wm_reader"] is None and os.path.exists(WATERMARK_PATH):
-        _CACHE["wm_reader"] = ImageReader(WATERMARK_PATH)
-
+    """White mask over content area + watermark.jpeg centered on top.
+    Matches the live preview: faint hibiscus flower centered in the body.
+    The image is already pre-faded, drawn at alpha 0.55 to match browser preview.
+    """
     buf = io.BytesIO()
     c = rl_canvas.Canvas(buf, pagesize=A4)
 
-    mask_y      = 128
-    mask_height = 572
+    # White mask — wipes the letterhead's own background in the content band
+    mask_y      = 128   # pts from bottom (45mm footer)
+    mask_height = 572   # pts content area
     c.setFillColorRGB(1, 1, 1)
     c.rect(30, mask_y, W - 60, mask_height, fill=1, stroke=0)
 
-    if _CACHE["wm_reader"] is not None:
-        wm_size = 340
+    # Draw watermark.jpeg centered in the content area — matches live preview
+    if os.path.exists(WATERMARK_PATH):
+        wm_size = 340   # pts (~120mm), visually matches preview
         wm_x    = (W - wm_size) / 2
         wm_y    = mask_y + (mask_height - wm_size) / 2
         c.saveState()
         c.setFillAlpha(0.55)
-        c.drawImage(_CACHE["wm_reader"], wm_x, wm_y,
+        c.drawImage(WATERMARK_PATH, wm_x, wm_y,
                     width=wm_size, height=wm_size,
                     mask="auto", preserveAspectRatio=True)
         c.restoreState()
@@ -139,7 +131,7 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
     d  = form_data
     st = _styles()
 
-    designation    = d.get("designation", "")
+    designation   = d.get("designation", "")
     monthly_salary = d.get("monthly_salary", "")
     monthly_words  = d.get("monthly_salary_words", "")
     yearly_words   = d.get("yearly_salary_words", "")
@@ -147,6 +139,20 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
         yearly = int(float(str(monthly_salary))) * 12
     except (ValueError, TypeError):
         yearly = 0
+
+    def _n(k):
+        try: return int(float(str(d.get(k, 0) or 0)))
+        except: return 0
+
+    basic   = _n("basic")
+    hra     = _n("hra")
+    convey  = _n("conveyance_allowance")
+    spl     = _n("special_allowance")
+    gross   = basic + hra + convey + spl
+    emp_pf  = _n("employer_pf")
+    ctc     = gross + emp_pf
+
+    def _fmt(v): return f"{v:,}" if v else ""
 
     story = [
         Paragraph("LETTER OF EMPLOYMENT", st["heading"]),
@@ -161,7 +167,7 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
             f"In continuation of our discussions on possible employment with M/s Godavari Krishna "
             f"Co-Op Society Limited Vijayawada, we are pleased to make you an offer as "
             f"<b>{designation}</b> Initially as per the norms fixed in the Appointment letter and "
-            f"Duty list.  Your complete appointment letter will be processed on the date of joining "
+            f"Duty list. Your complete appointment letter will be processed on the date of joining "
             f"post completion of your joining formalities with Godavari Krishna Co-Operative Society Limited.",
             st["body"]),
         Paragraph(
@@ -170,13 +176,13 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
             f"(in words Rupees <b>{yearly_words}</b> only) per annum.",
             st["body"]),
         Paragraph(
-            "<i>(Your remuneration details are attached in <b>Annexure - I</b> for your reference).</i>",
+            "<i>(Your remuneration details are attached in <b>Annexure - II</b> for your reference).</i>",
             st["italic"]),
         Paragraph(
             "It is mandatory to achieve your monthly set target of business given by your superior, "
             "to justify your monthly fixed pay. Your career with us is based on your performance and "
             "achievement of the set business goals and Objectives of the Organization. As discussed "
-            "with you during your interview, your 'Salary / Position' or maybe both will be revised "
+            "with you during your interview, your \'Salary / Position\' or maybe both will be revised "
             "after the first 6 months after you join, such revision shall be purely based on the level "
             "of your performance in these first 6 months.",
             st["body"]),
@@ -195,21 +201,22 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
         _S(3),
     ]
 
+    # Required Documents table — matches new draft format
     col1 = [
         "Aadhaar Card & PAN Card.",
         "3 Passport Size Photos (White Background).",
         "Academic Certificates: SSC, Inter, Degree & PG if any.",
-        "Police Verification Certificate\n(15 Days will be given; can be obtained through E Seva).",
-        "Nominee Aadhaar Card & PAN Card\n(For PF & ESI).",
-        "PF service history & PF passbook Statement\n(Available in UAN Login).",
+        "Police Verification Certificate (15 Days will be given; can be obtained through E Seva).",
+        "Nominee Passport Size Photo, Aadhaar Card & PAN Card (For PF & ESI).",
+        "PF service history & PF passbook Statement (Available in UAN Login).",
     ]
     col2 = [
         "2 Nationalised Bank Cheques.",
+        "Bank A/C Passbook Xerox (Front Page) or Cancelled Cheque.",
         "Previous Employment Offer Letters.",
-        "Pay Slips: Latest 3 Months and\nSalary Account Statement.",
+        "Pay Slips: Latest 3 Months and Salary Account Statement.",
         "Relieving Letter.",
-        "Physical fitness certificate by\nGovt. physician.",
-        "",
+        "Physical fitness certificate by Govt. physician.",
     ]
     th_style = ParagraphStyle("th", fontName="Helvetica-Bold", fontSize=10.5, alignment=TA_CENTER)
     tdata = [[Paragraph("Required Documents", th_style), ""]]
@@ -241,20 +248,21 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
             st["body"]),
         _S(6),
         HRFlowable(width=CW, thickness=0.5, color=colors.HexColor("#1F3864"), spaceBefore=2, spaceAfter=6),
-        Paragraph("Annexure - I", st["annhead"]),
+        Paragraph("Annexure-I", st["annhead"]),
         _S(2),
     ]
 
+    # Annexure-I — candidate details (new format: Cadre + Scale instead of Grade + Father Name)
     adata = [
         [Paragraph("<b>Name</b>",          st["small"]), Paragraph(d.get("full_name", ""),               st["small"])],
         [Paragraph("<b>Designation</b>",   st["small"]), Paragraph(designation,                           st["small"])],
-        [Paragraph("<b>Grade</b>",         st["small"]), Paragraph(d.get("grade", ""),                    st["small"])],
+        [Paragraph("<b>Cadre</b>",         st["small"]), Paragraph(d.get("cadre", ""),                    st["small"])],
+        [Paragraph("<b>Scale</b>",         st["small"]), Paragraph(d.get("scale", ""),                    st["small"])],
         [Paragraph("<b>Department</b>",    st["small"]), Paragraph(d.get("department", ""),               st["small"])],
         [Paragraph("<b>Date of Birth</b>", st["small"]), Paragraph(_fmt_date(d.get("date_of_birth", "")), st["small"])],
-        [Paragraph("<b>Father Name</b>",   st["small"]), Paragraph(d.get("father_name", ""),              st["small"])],
     ]
-    ann_table = Table(adata, colWidths=[CW * 0.32, CW * 0.68])
-    ann_table.setStyle(TableStyle([
+    ann1_table = Table(adata, colWidths=[CW * 0.32, CW * 0.68])
+    ann1_table.setStyle(TableStyle([
         ("BOX",           (0, 0), (-1, -1), 0.7, colors.HexColor("#1F3864")),
         ("INNERGRID",     (0, 0), (-1, -1), 0.4, colors.HexColor("#BDC7E0")),
         ("BACKGROUND",    (0, 0), (0, -1),  colors.HexColor("#F2F5FB")),
@@ -265,9 +273,48 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
     ]))
 
     story += [
-        ann_table,
+        ann1_table,
+        _S(6),
+        HRFlowable(width=CW, thickness=0.5, color=colors.HexColor("#1F3864"), spaceBefore=2, spaceAfter=6),
+        Paragraph("Annexure-II", st["annhead"]),
+        _S(2),
+    ]
+
+    # Annexure-II — CTC breakdown table (3 columns: Component / Monthly / Annual)
+    th3 = ParagraphStyle("th3", fontName="Helvetica-Bold", fontSize=10, alignment=TA_CENTER)
+    salary_rows = [
+        [Paragraph("<b>Pay Component</b>", th3), Paragraph("<b>Monthly Amount</b>", th3), Paragraph("<b>Annual Amount</b>", th3)],
+        [Paragraph("<b>Fixed</b>",         st["small"]), Paragraph(f"<b>{_fmt(int(float(str(monthly_salary or 0))))}</b>", st["small"]), Paragraph(f"<b>{_fmt(yearly)}</b>", st["small"])],
+        [Paragraph("Basic",                st["small"]), Paragraph(_fmt(basic),    st["small"]), Paragraph(_fmt(basic*12),   st["small"])],
+        [Paragraph("HRA",                  st["small"]), Paragraph(_fmt(hra),      st["small"]), Paragraph(_fmt(hra*12),     st["small"])],
+        [Paragraph("Conveyance Allowance", st["small"]), Paragraph(_fmt(convey),   st["small"]), Paragraph(_fmt(convey*12),  st["small"])],
+        [Paragraph("Special Allowance",    st["small"]), Paragraph(_fmt(spl),      st["small"]), Paragraph(_fmt(spl*12),     st["small"])],
+        [Paragraph("<b>Gross Salary</b>",  st["small"]), Paragraph(f"<b>{_fmt(gross)}</b>",  st["small"]), Paragraph(f"<b>{_fmt(gross*12)}</b>",  st["small"])],
+        [Paragraph("Employer PF",          st["small"]), Paragraph(_fmt(emp_pf),   st["small"]), Paragraph(_fmt(emp_pf*12),  st["small"])],
+        [Paragraph("<b>CTC</b>",           st["small"]), Paragraph(f"<b>{_fmt(ctc)}</b>",    st["small"]), Paragraph(f"<b>{_fmt(ctc*12)}</b>",    st["small"])],
+    ]
+    c1 = CW * 0.45; c2 = CW * 0.275; c3 = CW * 0.275
+    ann2_table = Table(salary_rows, colWidths=[c1, c2, c3])
+    ann2_table.setStyle(TableStyle([
+        ("BACKGROUND",    (0, 0), (-1, 0),  colors.HexColor("#1F3864")),
+        ("TEXTCOLOR",     (0, 0), (-1, 0),  colors.white),
+        ("BACKGROUND",    (0, 2), (-1, 2),  colors.HexColor("#F2F5FB")),
+        ("BACKGROUND",    (0, 4), (-1, 4),  colors.HexColor("#F2F5FB")),
+        ("BACKGROUND",    (0, 6), (-1, 6),  colors.HexColor("#D9E1F2")),
+        ("BACKGROUND",    (0, 8), (-1, 8),  colors.HexColor("#D9E1F2")),
+        ("BOX",           (0, 0), (-1, -1), 0.7, colors.HexColor("#1F3864")),
+        ("INNERGRID",     (0, 0), (-1, -1), 0.4, colors.HexColor("#BDC7E0")),
+        ("ALIGN",         (1, 0), (-1, -1), "CENTER"),
+        ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING",    (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 8),
+    ]))
+
+    story += [
+        ann2_table,
         _S(4),
-        Paragraph("<b>NOTE:</b> PF, ESI, and Professional Tax will be deducted as applicable.", st["note"]),
+        Paragraph("<b>*NOTE:</b> PF, ESI, and Professional Tax will be deducted as applicable.", st["note"]),
     ]
 
     doc.build(story)
@@ -555,27 +602,29 @@ _BUILDERS = {
 
 def _merge_with_letterhead(content_bytes: bytes, letterhead_path: str) -> bytes:
     """Merges content PDF with letterhead on every page.
-    Letterhead bytes and mask PDF are cached at module level — read/rendered once.
+    
+    Process for each page:
+    1. Get fresh copy of letterhead page
+    2. Apply white mask to block watermark in content area
+    3. Merge content page on top
     """
-    # Cache letterhead bytes — avoids disk read on every call
-    if _CACHE["lh_bytes"] is None:
-        with open(letterhead_path, "rb") as f:
-            _CACHE["lh_bytes"] = f.read()
-
-    # Cache mask+watermark PDF — avoids re-rendering on every call
-    if _CACHE["mask_bytes"] is None:
-        _CACHE["mask_bytes"] = _make_white_mask_pdf()
-
-    lh_bytes_cached = _CACHE["lh_bytes"]
-    mask_reader     = PdfReader(io.BytesIO(_CACHE["mask_bytes"]))
-    content_reader  = PdfReader(io.BytesIO(content_bytes))
+    mask_bytes     = _make_white_mask_pdf()
+    lh_reader      = PdfReader(letterhead_path)
+    mask_reader    = PdfReader(io.BytesIO(mask_bytes))
+    content_reader = PdfReader(io.BytesIO(content_bytes))
 
     writer = PdfWriter()
     for content_page in content_reader.pages:
-        # Fresh PdfReader per page so pypdf page objects stay independent
-        lh_page = PdfReader(io.BytesIO(lh_bytes_cached)).pages[0]
+        # Get fresh letterhead page (not a copy - read it fresh each time)
+        lh_page = PdfReader(letterhead_path).pages[0]
+        
+        # Apply mask
         lh_page.merge_page(mask_reader.pages[0])
+        
+        # Apply content
         lh_page.merge_page(content_page)
+        
+        # Add to output
         writer.add_page(lh_page)
 
     out = io.BytesIO()
