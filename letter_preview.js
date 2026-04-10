@@ -75,18 +75,27 @@ const LetterPreview = (() => {
     const pageStyle = `
       @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
       *{box-sizing:border-box;margin:0;padding:0}
-      html,body{background:#e8ebf4;font-family:Helvetica,Arial,sans-serif}
+      html,body{background:#e8ebf4;font-family:Helvetica,Arial,sans-serif;overflow-x:hidden}
 
-      /* A4 page shell */
+      /* Scale wrapper — shrinks A4 (210mm) to fit 100% of iframe width */
+      .scaler{
+        width:100%;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        padding:12px 0;
+      }
+      /* A4 page shell — fixed 210mm width, scaled down via JS to fit container */
       .page{
         width:210mm; min-height:297mm;
         background:#fff;
         position:relative;
         display:flex; flex-direction:column;
-        margin:0 auto 20px;
+        margin:0 0 16px 0;
         box-shadow:0 4px 32px rgba(31,56,100,0.18);
         overflow:hidden;
         page-break-after:always;
+        transform-origin:top center;
       }
 
       /* Header image — full width, ~56mm tall */
@@ -218,8 +227,31 @@ const LetterPreview = (() => {
 <style>${pageStyle}</style>
 </head>
 <body>
-${pageTemplate(page1Html, true)}
-${page2Html ? pageTemplate(page2Html, false) : ''}
+<div class="scaler" id="scaler">
+  ${pageTemplate(page1Html, true)}
+  ${page2Html ? pageTemplate(page2Html, false) : ''}
+</div>
+<script>
+  // Scale all .page divs to fit the available width without horizontal scroll
+  function scalePage() {
+    const pages = document.querySelectorAll('.page');
+    if (!pages.length) return;
+    const available = document.documentElement.clientWidth - 24; // 12px padding each side
+    const pageW = pages[0].offsetWidth; // actual rendered 210mm in px
+    if (pageW <= 0) return;
+    const scale = Math.min(1, available / pageW);
+    pages.forEach(p => {
+      p.style.transform = 'scale(' + scale + ')';
+      p.style.marginBottom = scale < 1
+        ? (-(pageW * (1 - scale)) / 2 + 16) + 'px'  // collapse scaled whitespace
+        : '16px';
+    });
+    // Set scaler height so page doesn't clip
+    document.getElementById('scaler').style.paddingBottom = '12px';
+  }
+  scalePage();
+  window.addEventListener('resize', scalePage);
+<\/script>
 </body>
 </html>`;
   }
