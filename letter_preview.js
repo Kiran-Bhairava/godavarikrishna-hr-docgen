@@ -162,20 +162,70 @@ const LetterPreview = (() => {
     </div>`;
   }
 
+  // ── Indian number words (mirrors pdf_service._indian_words) ────────────────
+  function indianWords(n) {
+    if (!n) return "Zero";
+    const ones = ["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine",
+                  "Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen",
+                  "Seventeen","Eighteen","Nineteen"];
+    const tens = ["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
+    function two(n)   { return n < 20 ? ones[n] : tens[Math.floor(n/10)] + (n%10 ? " "+ones[n%10] : ""); }
+    function three(n) { return n>=100 ? ones[Math.floor(n/100)]+" Hundred"+(n%100?" "+two(n%100):"") : two(n); }
+    const parts = [];
+    if (n >= 10000000) { parts.push(three(Math.floor(n/10000000))+" Crore"); n %= 10000000; }
+    if (n >= 100000)   { parts.push(three(Math.floor(n/100000))+" Lakh");    n %= 100000; }
+    if (n >= 1000)     { parts.push(three(Math.floor(n/1000))+" Thousand");  n %= 1000; }
+    if (n > 0)         { parts.push(three(n)); }
+    return parts.join(" ");
+  }
+
+  // ── Salary Grid — mirrors _SALARY_GRID in pdf_service.py ──────────────────
+  const SALARY_GRID = [
+    { scale: "Scale IV",  grade: "President",             min: 90500, max: 100000 },
+    { scale: "Scale IV",  grade: "Vice President",        min: 80500, max:  90000 },
+    { scale: "Scale IV",  grade: "Deputy Vice President", min: 75500, max:  80000 },
+    { scale: "Scale IV",  grade: "Asst.Vice President",   min: 70500, max:  75000 },
+    { scale: "Scale III", grade: "Sr.Chief Manager",      min: 60500, max:  70000 },
+    { scale: "Scale III", grade: "Chief Manager",         min: 50500, max:  60000 },
+    { scale: "Scale II",  grade: "Sr.Manager",            min: 40500, max:  50000 },
+    { scale: "Scale II",  grade: "Manager",               min: 35500, max:  40000 },
+    { scale: "Scale II",  grade: "Deputy Manager",        min: 25500, max:  35000 },
+    { scale: "Scale II",  grade: "Asst.Manager",          min: 23500, max:  25000 },
+    { scale: "Scale I",   grade: "Sr.Officer",            min: 20500, max:  23000 },
+    { scale: "Scale I",   grade: "Officer",               min: 17500, max:  20000 },
+    { scale: "Scale I",   grade: "Jr.Officer",            min: 15000, max:  17000 },
+    { scale: "Scale I",   grade: "Office Assistant",      min: 10000, max:  12000 },
+  ];
+
+  function lookupGradeScale(salary) {
+    const s = Number(salary) || 0;
+    const row = SALARY_GRID.find(r => s >= r.min && s <= r.max);
+    return row ? { grade: row.grade, scale: row.scale } : { grade: "", scale: "" };
+  }
+
   // ── 1. Offer Letter ────────────────────────────────────────────────────────
   function offerLetter(d, dateStr) {
-    const monthly = d.monthly_salary || "";
-    const yearly  = monthly ? (Number(monthly) * 12).toLocaleString("en-IN") : "";
-
-    function n(k) { return Number(d[k] || 0); }
-    const basic  = n("basic");
-    const hra    = n("hra");
-    const convey = n("conveyance_allowance");
-    const spl    = n("special_allowance");
-    const gross  = basic + hra + convey + spl;
-    const empPF  = n("employer_pf");
+    const ms     = Math.round(Number(d.monthly_salary) || 0);
+    const basic  = Math.round(ms * 0.40);
+    const hra    = Math.round(basic * 0.50);
+    const convey = Math.round(basic * 0.15);
+    const spl    = ms - basic - hra - convey;
+    const empPF  = basic > 15000 ? 1800 : Math.round(basic * 0.12);
+    const gross  = ms;
     const ctc    = gross + empPF;
+    const yearly = ms * 12;
+
+    const monthlyWords = indianWords(ms);
+    const yearlyWords  = indianWords(yearly);
+
+    // Auto-lookup grade and scale from salary grid
+    const _gs    = lookupGradeScale(ms);
+    const grade  = d.grade  || _gs.grade;
+    const scale  = d.scale  || _gs.scale;
+
     function fmt(v) { return v ? Number(v).toLocaleString("en-IN") : ""; }
+    const monthly = ms ? fmt(ms) : "";
+    const yearlyFmt = yearly ? fmt(yearly) : "";
 
     return wrap(`
       <!-- Title: CENTER, Bold+Underline -->
@@ -197,7 +247,7 @@ const LetterPreview = (() => {
 
       <p style="text-align:justify;padding-left:8px">In continuation of our discussions on possible employment with M/s Godavari Krishna Co-Op Society Limited Vijayawada, we are pleased to make you an offer as <b>${d.designation || ""}</b> Initially as per the norms fixed in the Appointment letter and Duty list. Your complete appointment letter will be processed on the date of joining post completion of your joining formalities with Godavari Krishna Co-Operative Society Limited.</p>
 
-      <p style="text-align:justify;padding-left:8px">Your fixed remuneration will be INR <b><u>${monthly}/-</u></b> (in words Rupees <b><u>${d.monthly_salary_words || ""}</u></b> only) per month and INR <b>${yearly}/-</b> (in words Rupees <b><u>${d.yearly_salary_words || ""}</u></b> only) per annum.</p>
+      <p style="text-align:justify;padding-left:8px">Your fixed remuneration will be INR <b><u>${monthly}/-</u></b> (in words Rupees <b><u>${monthlyWords}</u></b> only) per month and INR <b>${yearlyFmt}/-</b> (in words Rupees <b><u>${yearlyWords}</u></b> only) per annum.</p>
 
       <p style="text-align:justify;padding-left:8px;font-style:italic">(Your remuneration details are attached in Annexure – II for your reference).</p>
 
@@ -257,12 +307,12 @@ const LetterPreview = (() => {
             <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">${d.designation || ""}</td>
           </tr>
           <tr>
-            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">Cadre</td>
-            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">${d.cadre || ""}</td>
+            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">Grade</td>
+            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">${grade}</td>
           </tr>
           <tr style="background:#f4f5f9">
             <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">Scale</td>
-            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">${d.scale || ""}</td>
+            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">${scale}</td>
           </tr>
           <tr>
             <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">Department</td>
@@ -288,8 +338,8 @@ const LetterPreview = (() => {
         <tbody>
           <tr>
             <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>Fixed</b></td>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>${fmt(Number(monthly) || 0)}</b></td>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>${yearly}</b></td>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>${fmt(ms)}</b></td>
+            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>${yearlyFmt}</b></td>
           </tr>
           <tr style="background:#f4f5f9">
             <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">Basic</td>

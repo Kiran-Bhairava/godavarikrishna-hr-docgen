@@ -315,6 +315,46 @@ async def reject_document(
 
 # ── PDF Download ───────────────────────────────────────────────────────────────
 
+@router.post("/{doc_id}/send_back", response_model=DocumentOut)
+async def send_back_document(
+    doc_id: str,
+    body: ApprovalAction,
+    conn: asyncpg.Connection = Depends(get_conn),
+    current_user: asyncpg.Record = Depends(require_role("admin")),
+):
+    """Admin sends a pending document back to recruiter as draft for correction."""
+    doc = await conn.fetchrow("SELECT * FROM documents WHERE id = $1", doc_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    if doc["status"] != "pending_approval":
+        raise HTTPException(status_code=400, detail="Document is not pending approval")
+
+    async with conn.transaction():
+        row = await conn.fetchrow(
+            """
+            UPDATE documents SET status = 'draft', updated_at = now()
+            WHERE id = $1
+            RETURNING id, document_type_id, candidate_name, status, form_data,
+                      current_version, created_by, pdf_path, created_at, updated_at,
+                      $2 AS admin_notes
+            """,
+            doc_id, body.comments
+        )
+        await conn.execute(
+            """
+            INSERT INTO approval_logs (document_id, reviewed_by, action, comments)
+            VALUES ($1, $2, 'sent_back', $3)
+            """,
+            doc_id, current_user["id"], body.comments
+        )
+
+    doc_type = await conn.fetchrow(
+        "SELECT label, code FROM document_types WHERE id = $1",
+        row["document_type_id"]
+    )
+    return parse_doc(row, doc_type["label"], doc_type["code"])
+
+
 @router.get("/{doc_id}/approval-logs")
 async def get_approval_logs(
     doc_id: str,

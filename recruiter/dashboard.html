@@ -808,6 +808,52 @@
       let activeTypeId = null;
       let currentFields = []; // fields for open drawer type
 
+      // ── Salary grid — mirrors pdf_service._SALARY_GRID ──────────────────────
+      const SALARY_GRID = [
+        { scale: "Scale IV", grade: "President", min: 90500, max: 100000 },
+        { scale: "Scale IV", grade: "Vice President", min: 80500, max: 90000 },
+        {
+          scale: "Scale IV",
+          grade: "Deputy Vice President",
+          min: 75500,
+          max: 80000,
+        },
+        {
+          scale: "Scale IV",
+          grade: "Asst.Vice President",
+          min: 70500,
+          max: 75000,
+        },
+        {
+          scale: "Scale III",
+          grade: "Sr.Chief Manager",
+          min: 60500,
+          max: 70000,
+        },
+        { scale: "Scale III", grade: "Chief Manager", min: 50500, max: 60000 },
+        { scale: "Scale II", grade: "Sr.Manager", min: 40500, max: 50000 },
+        { scale: "Scale II", grade: "Manager", min: 35500, max: 40000 },
+        { scale: "Scale II", grade: "Deputy Manager", min: 25500, max: 35000 },
+        { scale: "Scale II", grade: "Asst.Manager", min: 23500, max: 25000 },
+        { scale: "Scale I", grade: "Sr.Officer", min: 20500, max: 23000 },
+        { scale: "Scale I", grade: "Officer", min: 17500, max: 20000 },
+        { scale: "Scale I", grade: "Jr.Officer", min: 15000, max: 17000 },
+        { scale: "Scale I", grade: "Office Assistant", min: 10000, max: 12000 },
+      ];
+
+      function lookupGradeScale(salary) {
+        const s = Number(salary) || 0;
+        const row = SALARY_GRID.find((r) => s >= r.min && s <= r.max);
+        return row
+          ? { grade: row.grade, scale: row.scale }
+          : { grade: "", scale: "" };
+      }
+
+      // Alias so _renderField inline handlers work
+      function schedulePreview() {
+        refreshPreview();
+      }
+
       const TYPE_ICONS = {
         offer_letter: "📄",
         appointment_letter: "📝",
@@ -824,23 +870,12 @@
           {
             title: "Identity & Role",
             icon: "🪪",
-            fields: [
-              "full_name",
-              "designation",
-              "grade",
-              "department",
-              "date_of_birth",
-              "father_name",
-            ],
+            fields: ["full_name", "designation", "department", "date_of_birth"],
           },
           {
             title: "Compensation",
             icon: "💵",
-            fields: [
-              "monthly_salary",
-              "monthly_salary_words",
-              "yearly_salary_words",
-            ],
+            fields: ["monthly_salary", "grade", "scale"],
           },
         ],
         appointment_letter: [
@@ -943,20 +978,16 @@
       };
 
       // Fields that should be FULL width even inside 2-col grid
-      const FULL_WIDTH_FIELDS = new Set([
-        "address",
-        "monthly_salary_words",
-        "yearly_salary_words",
-        "increment_words",
-      ]);
+      const FULL_WIDTH_FIELDS = new Set(["address", "increment_words"]);
 
       // Hints shown below specific fields
       const FIELD_HINTS = {
-        monthly_salary_words: "e.g. Twenty Two Thousand",
-        yearly_salary_words: "e.g. Two Lakhs Sixty Four Thousand",
+        monthly_salary: "Grade & Scale auto-fill from this",
+        grade: "Auto-filled — override if needed",
+        scale: "Auto-filled — override if needed",
         increment_words: "e.g. Ten Thousand",
         fy: "e.g. 2024-2025",
-        scale: "e.g. Scale – III / Jr. Trainee Assistant",
+        scale: "e.g. Scale I / Scale II",
         last_drawn_salary: "e.g. 3.0 L/A",
       };
 
@@ -1233,6 +1264,24 @@
               form_data[f.name] =
                 f.type === "number" ? Number(el.value) : el.value;
           });
+          // Auto-fill grade/scale for offer_letter when salary changes
+          if (type.code === "offer_letter") {
+            const salaryEl = document.getElementById("field_monthly_salary");
+            const gradeEl = document.getElementById("field_grade");
+            const scaleEl = document.getElementById("field_scale");
+            if (salaryEl && gradeEl && scaleEl) {
+              const gs = lookupGradeScale(Number(salaryEl.value) || 0);
+              if (!gradeEl.value) {
+                gradeEl.value = gs.grade;
+                form_data.grade = gs.grade;
+              }
+              if (!scaleEl.value) {
+                scaleEl.value = gs.scale;
+                form_data.scale = gs.scale;
+              }
+            }
+          }
+
           const liveDoc = {
             document_type_code: type.code,
             document_type_label: type.label,
@@ -1292,38 +1341,46 @@
 
       function _renderField(f, existingDoc) {
         const val = existingDoc?.form_data?.[f.name] ?? "";
-        const hint = FIELD_HINTS[f.name] || "";
+        const hint = FIELD_HINTS[f.name] || f.hint || "";
         const full = FULL_WIDTH_FIELDS.has(f.name) ? "field-full" : "";
-        const itype =
-          f.type === "number"
-            ? "number"
-            : f.type === "date"
-              ? "date"
-              : f.type === "email"
-                ? "email"
-                : "text";
+        const req = f.required ? '<span class="field-required">*</span>' : "";
 
-        return `
-          <div class="field-wrap ${full}" id="wrap_${f.name}">
-            <div class="field-label">
-              ${f.label}${f.required ? ' <span class="field-required">*</span>' : ""}
-            </div>
-            <input
-              type="${itype}"
-              class="field-input"
-              id="field_${f.name}"
-              data-name="${f.name}"
-              data-required="${f.required}"
-              data-ftype="${f.type}"
-              placeholder="${hint || f.label}"
-              value="${String(val).replace(/"/g, "&quot;")}"
-              ${f.type === "number" ? 'min="0"' : ""}
-            />
+        // SELECT field
+        if (f.type === "select" && Array.isArray(f.options)) {
+          const opts = f.options
+            .map(
+              (o) =>
+                `<option value="${o}" ${val === o ? "selected" : ""}>${o}</option>`,
+            )
+            .join("");
+          return `<div class="field-wrap ${full}">
+            <div class="field-label">${f.label} ${req}</div>
+            <select class="field-input" id="field_${f.name}" onchange="schedulePreview()">
+              <option value="">— Select —</option>
+              ${opts}
+            </select>
             ${hint ? `<div class="field-hint">${hint}</div>` : ""}
-            <div class="field-error">${f.label} is required</div>
           </div>`;
-      }
+        }
 
+        // TEXT / NUMBER / DATE field
+        const itype =
+          f.type === "number" ? "number" : f.type === "date" ? "date" : "text";
+
+        // For grade/scale — add auto-fill on monthly_salary change
+        const extraAttr =
+          f.name === "grade" || f.name === "scale"
+            ? `placeholder="Auto-filled from salary"`
+            : `placeholder="${f.label}"`;
+
+        return `<div class="field-wrap ${full}">
+          <div class="field-label">${f.label} ${req}</div>
+          <input type="${itype}" class="field-input" id="field_${f.name}"
+            value="${val}" ${extraAttr}
+            oninput="schedulePreview()" />
+          ${hint ? `<div class="field-hint">${hint}</div>` : ""}
+        </div>`;
+      }
       // ── Validation & progress ─────────────────────────────────────────────────
       function validateField(el, required) {
         const wrap = el.closest(".field-wrap");

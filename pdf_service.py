@@ -7,7 +7,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib import colors
-from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, HRFlowable
+from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, HRFlowable, PageBreak, KeepTogether
 from reportlab.platypus.frames import Frame
 from reportlab.platypus.doctemplate import BaseDocTemplate, PageTemplate
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
@@ -55,27 +55,96 @@ def _fmt_date(val: str) -> str:
     return val
 
 
-def _make_white_mask_pdf() -> bytes:
-    """White mask over content area + watermark.jpeg centered on top.
-    Matches the live preview: faint hibiscus flower centered in the body.
-    The image is already pre-faded, drawn at alpha 0.55 to match browser preview.
+def _indian_words(n: int) -> str:
+    """Convert integer to Indian numbering words (Lakhs/Crores)."""
+    if not n:
+        return "Zero"
+    ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+            "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
+            "Seventeen", "Eighteen", "Nineteen"]
+    tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
+
+    def _two(n):
+        return ones[n] if n < 20 else tens[n // 10] + (" " + ones[n % 10] if n % 10 else "")
+
+    def _three(n):
+        if n >= 100:
+            r = ones[n // 100] + " Hundred"
+            return r + (" " + _two(n % 100) if n % 100 else "")
+        return _two(n)
+
+    parts = []
+    if n >= 10_000_000:
+        parts.append(_three(n // 10_000_000) + " Crore"); n %= 10_000_000
+    if n >= 100_000:
+        parts.append(_three(n // 100_000) + " Lakh");     n %= 100_000
+    if n >= 1_000:
+        parts.append(_three(n // 1_000) + " Thousand");   n %= 1_000
+    if n > 0:
+        parts.append(_three(n))
+    return " ".join(parts)
+
+
+# ── Salary Grid — from New_Salary_Grid.xlsx ───────────────────────────────────
+# (scale, grade, designation_hint, min_salary, max_salary)
+_SALARY_GRID = [
+    ("Scale IV",  "President",            "State Head in all depts",                          90500, 100000),
+    ("Scale IV",  "Vice President",       "Sr.Zonal Head/HOD",                                80500,  90000),
+    ("Scale IV",  "Deputy Vice President","Zonal Head/HOD",                                   75500,  80000),
+    ("Scale IV",  "Asst.Vice President",  "Zonal Head/HOD",                                   70500,  75000),
+    ("Scale III", "Sr.Chief Manager",     "Sr.Regional Head",                                 60500,  70000),
+    ("Scale III", "Chief Manager",        "Sr.Cluster Business Head/Regional Head/Ops Head",  50500,  60000),
+    ("Scale II",  "Sr.Manager",           "Cluster Business Head/Vertical Head",              40500,  50000),
+    ("Scale II",  "Manager",              "Sr.Branch Manager",                                35500,  40000),
+    ("Scale II",  "Deputy Manager",       "Branch Manager/Branch Incharge",                   25500,  35000),
+    ("Scale II",  "Asst.Manager",         "ABM Sales/Loans/BI",                               23500,  25000),
+    ("Scale I",   "Sr.Officer",           "DBH/ABM Sales/ABM L&C",                            20500,  23000),
+    ("Scale I",   "Officer",              "Sr.Clerk",                                         17500,  20000),
+    ("Scale I",   "Jr.Officer",           "Clerk",                                            15000,  17000),
+    ("Scale I",   "Jr.Officer Trainee",   "Jr.Clerk",                                             0,      0),
+    ("Scale I",   "Office Assistant",     "Peon/Facility Assistant",                          10000,  12000),
+]
+
+
+def _lookup_grade_scale(monthly_salary: int) -> tuple[str, str]:
+    """Return (grade, scale) for a given monthly salary based on the salary grid."""
+    for scale, grade, _, lo, hi in _SALARY_GRID:
+        if hi == 0:
+            continue   # Jr.Officer Trainee — no salary range, skip auto-match
+        if lo <= monthly_salary <= hi:
+            return grade, scale
+    return "", ""
+
+
+
+
+def _make_base_pdf() -> bytes:
+    """Builds a clean base page: pure white background + faint watermark.
+
+    New layer order (bottom to top):
+      1. This base PDF  — full white + faint watermark
+      2. Letterhead PDF — header/footer graphics are opaque, body is transparent
+      3. Content PDF    — text and tables
+
+    White goes UNDER the letterhead so header/footer render crisp with no tint.
+    The letterhead body area is transparent so the watermark shows through cleanly.
     """
     buf = io.BytesIO()
     c = rl_canvas.Canvas(buf, pagesize=A4)
 
-    # White mask — wipes the letterhead's own background in the content band
-    mask_y      = 128   # pts from bottom (45mm footer)
-    mask_height = 572   # pts content area
+    # Full white page — kills all background tint
     c.setFillColorRGB(1, 1, 1)
-    c.rect(30, mask_y, W - 60, mask_height, fill=1, stroke=0)
+    c.rect(0, 0, W, H, fill=1, stroke=0)
 
-    # Draw watermark.jpeg centered in the content area — matches live preview
+    # Faint watermark centered in body area
     if os.path.exists(WATERMARK_PATH):
-        wm_size = 340   # pts (~120mm), visually matches preview
+        body_y      = 95
+        body_height = H - 178 - 95
+        wm_size = 300
         wm_x    = (W - wm_size) / 2
-        wm_y    = mask_y + (mask_height - wm_size) / 2
+        wm_y    = body_y + (body_height - wm_size) / 2
         c.saveState()
-        c.setFillAlpha(0.55)
+        c.setFillAlpha(0.06)
         c.drawImage(WATERMARK_PATH, wm_x, wm_y,
                     width=wm_size, height=wm_size,
                     mask="auto", preserveAspectRatio=True)
@@ -85,11 +154,12 @@ def _make_white_mask_pdf() -> bytes:
     return buf.getvalue()
 
 
-def _frame_doc(buf, top_mm=52, bot_mm=47, left_mm=22, right_mm=22):
+def _frame_doc(buf, top_mm=52, bot_mm=47, left_mm=18, right_mm=18):
     """Creates document template with frame adjusted for Godavari Krishna letterhead.
     
-    Top margin: 52mm (50mm header + 2mm buffer)
-    Bottom margin: 47mm (45mm footer + 2mm buffer)
+    Top margin: 52mm (matches header image height)
+    Bottom margin: 47mm (matches footer + safe buffer, default for most letters)
+    Left/Right: 18mm for maximum usable content width
     """
     TOP   = top_mm  * mm
     BOT   = bot_mm  * mm
@@ -127,59 +197,68 @@ def _dual_sign_table(cw, st,
 
 def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
     buf = io.BytesIO()
-    doc, CW = _frame_doc(buf)
+    # top=56mm clears the real 52mm header. bot=37mm clears the real 35mm footer.
+    # Page 1: letter body + required docs + signature. Page 2: Annexure-I & II.
+    doc, CW = _frame_doc(buf, top_mm=56, bot_mm=32, left_mm=18, right_mm=18)
     d  = form_data
     st = _styles()
 
-    designation    = d.get("designation", "")
-    monthly_salary = d.get("monthly_salary", "")
-    monthly_words  = d.get("monthly_salary_words", "")
-    yearly_words   = d.get("yearly_salary_words", "")
+    designation = d.get("designation", "")
     try:
-        yearly = int(float(str(monthly_salary))) * 12
+        monthly_salary = int(float(str(d.get("monthly_salary", 0) or 0)))
     except (ValueError, TypeError):
-        yearly = 0
+        monthly_salary = 0
 
-    def _n(k):
-        try: return int(float(str(d.get(k, 0) or 0)))
-        except: return 0
+    # All salary components auto-derived — only monthly_salary is a user input
+    basic  = round(monthly_salary * 0.40)
+    hra    = round(basic * 0.50)
+    convey = round(basic * 0.15)
+    spl    = monthly_salary - basic - hra - convey   # balancing figure
+    emp_pf = 1800 if basic > 15000 else round(basic * 0.12)
+    gross  = monthly_salary                           # basic+hra+convey+spl == monthly
+    ctc    = gross + emp_pf
+    yearly = monthly_salary * 12
+    monthly_words = _indian_words(monthly_salary)
+    yearly_words  = _indian_words(yearly)
 
-    basic  = _n("basic");  hra    = _n("hra")
-    convey = _n("conveyance_allowance");  spl = _n("special_allowance")
-    gross  = basic + hra + convey + spl
-    emp_pf = _n("employer_pf");  ctc = gross + emp_pf
+    # Auto-lookup grade and scale from salary grid (override with form value if provided)
+    _auto_grade, _auto_scale = _lookup_grade_scale(monthly_salary)
+    grade = d.get("grade") or _auto_grade
+    scale = d.get("scale") or _auto_scale
+
     def _fmt(v): return f"{v:,}" if v else ""
 
-    # ── Styles matching draft ─────────────────────────────────────────────────
+    # ── Styles — tightened to fit page 1 body + docs in one page ─────────────
     title_st  = ParagraphStyle("otitle", fontName="Helvetica-Bold", fontSize=12,
-                                alignment=TA_CENTER, leading=16, spaceAfter=2,
+                                alignment=TA_CENTER, leading=15, spaceAfter=2,
                                 underlineWidth=0.5, underline=True)
     date_st   = ParagraphStyle("odate",  fontName="Helvetica-Bold", fontSize=10.5,
-                                alignment=2, leading=14, spaceAfter=8)
+                                alignment=2, leading=13, spaceAfter=3)
     to_st     = ParagraphStyle("oto",    fontName="Helvetica-Bold", fontSize=10.5,
-                                leading=14, leftIndent=6, spaceAfter=1)
+                                leading=13, leftIndent=6, spaceAfter=1)
     name_st   = ParagraphStyle("oname",  fontName="Helvetica-Bold", fontSize=10.5,
-                                leading=14, leftIndent=36, spaceAfter=10)
-    body_st   = ParagraphStyle("obody",  fontName="Helvetica", fontSize=10.5,
-                                alignment=TA_JUSTIFY, leading=17, leftIndent=6, spaceAfter=9)
-    italic_st = ParagraphStyle("oital",  fontName="Helvetica-Oblique", fontSize=10.5,
-                                alignment=TA_JUSTIFY, leading=15, leftIndent=6, spaceAfter=9)
-    left_st   = ParagraphStyle("oleft",  fontName="Helvetica", fontSize=10,
-                                alignment=TA_LEFT, leading=15, spaceAfter=6)
+                                leading=13, leftIndent=36, spaceAfter=4)
+    body_st   = ParagraphStyle("obody",  fontName="Helvetica", fontSize=9.5,
+                                alignment=TA_JUSTIFY, leading=14, leftIndent=6, spaceAfter=7)
+    italic_st = ParagraphStyle("oital",  fontName="Helvetica-Oblique", fontSize=9.5,
+                                alignment=TA_JUSTIFY, leading=13, leftIndent=6, spaceAfter=3)
+    left_st   = ParagraphStyle("oleft",  fontName="Helvetica", fontSize=9.5,
+                                alignment=TA_LEFT, leading=13, spaceAfter=7)
     ann_ttl   = ParagraphStyle("oannttl", fontName="Helvetica-Bold", fontSize=11,
-                                alignment=TA_LEFT, leading=15,
+                                alignment=TA_LEFT, leading=14,
                                 underlineWidth=0.5, underline=True,
-                                spaceAfter=4, spaceBefore=10)
-    ctr_st    = ParagraphStyle("octr",   fontName="Helvetica", fontSize=9.5,
-                                alignment=TA_CENTER, leading=13)
-    ctr_b     = ParagraphStyle("octrb",  fontName="Helvetica-Bold", fontSize=9.5,
-                                alignment=TA_CENTER, leading=13)
+                                spaceAfter=3, spaceBefore=4)
+    ctr_st    = ParagraphStyle("octr",   fontName="Helvetica",     fontSize=9,
+                                alignment=TA_CENTER, leading=11)
+    ctr_b     = ParagraphStyle("octrb",  fontName="Helvetica-Bold", fontSize=9,
+                                alignment=TA_CENTER, leading=11)
     note_st   = ParagraphStyle("onote",  fontName="Helvetica-Bold", fontSize=9.5,
-                                alignment=TA_LEFT, leading=13, spaceBefore=4)
+                                alignment=TA_LEFT, leading=13, spaceBefore=3)
 
+    # ── Page 1: Letter body ───────────────────────────────────────────────────
     story = [
         Paragraph("<u>LETTER OF EMPLOYMENT</u>", title_st),
-        HRFlowable(width=CW, thickness=1, color=colors.HexColor("#1F3864"), spaceAfter=10),
+        # HRFlowable(width=CW, thickness=1, color=colors.HexColor("#1F3864"), spaceAfter=4),
         Paragraph(f"<b>Date: {date_str}</b>", date_st),
         Paragraph("<b>To,</b>", to_st),
         Paragraph(f"<b>Mr./Ms. {d.get('full_name', '')},</b>", name_st),
@@ -191,9 +270,9 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
             f"post completion of your joining formalities with Godavari Krishna Co-Operative Society Limited.",
             body_st),
         Paragraph(
-            f"Your fixed remuneration will be INR <b><u>{monthly_salary}/-</u></b> "
+            f"Your fixed remuneration will be INR <b><u>{monthly_salary:,}/-</u></b> "
             f"(in words Rupees <b><u>{monthly_words}</u></b> only) per month and INR "
-            f"<b>{yearly}/-</b> (in words Rupees <b><u>{yearly_words}</u></b>) per annum.",
+            f"<b>{yearly:,}/-</b> (in words Rupees <b><u>{yearly_words}</u></b>) per annum.",
             body_st),
         Paragraph(
             "<i>(Your remuneration details are attached in Annexure – II for your reference).</i>",
@@ -216,14 +295,13 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
         Paragraph(
             "You have to submit the following details for generating your employment with the Society.",
             body_st),
-        _S(2),
     ]
 
-    # ── Required Documents — yellow header, ➤ bullets, splitByRow=1 ──────────
-    rq_th = ParagraphStyle("rqth", fontName="Helvetica-Bold", fontSize=10.5,
+    # ── Required Documents — yellow header, ► bullets (still on page 1) ──────
+    rq_th = ParagraphStyle("rqth", fontName="Helvetica-Bold", fontSize=10,
                             alignment=TA_CENTER, underlineWidth=0.5, underline=True)
-    rq_bd = ParagraphStyle("rqbd", fontName="Helvetica", fontSize=9.8,
-                            alignment=TA_JUSTIFY, leading=16, spaceAfter=3)
+    rq_bd = ParagraphStyle("rqbd", fontName="Helvetica", fontSize=8.5,
+                            alignment=TA_JUSTIFY, leading=12, spaceAfter=3)
     ARROW = "► "
 
     col1 = [
@@ -255,14 +333,15 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
         ("BOX",           (0, 0), (-1, -1), 1.2, colors.HexColor("#1F3864")),
         ("INNERGRID",     (0, 0), (-1, -1), 0.8, colors.HexColor("#1F3864")),
         ("VALIGN",        (0, 0), (-1, -1), "TOP"),
-        ("TOPPADDING",    (0, 0), (-1, -1), 7),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
-        ("LEFTPADDING",   (0, 0), (-1, -1), 8),
-        ("RIGHTPADDING",  (0, 0), (-1, -1), 8),
+        ("TOPPADDING",    (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING",  (0, 0), (-1, -1), 6),
     ]))
 
     story += [
-        docs_tbl, _S(3),
+        _S(3),
+        docs_tbl,
         Paragraph(
             "(You should submit these details within <b>7 days</b> from the date of receipt of this OFFER.)",
             left_st),
@@ -270,17 +349,20 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
             "This is only an offer of employment and you shall communicate your acceptance of this "
             "offer within <b>3 days</b> from the receipt thereof, failing which this offer shall stand cancelled.",
             left_st),
-        _S(4),
+        _S(2),
+        # _dual_sign_table(CW, st),
+        # Page 1 ends here — Annexures on page 2
+        PageBreak(),
     ]
 
-    # ── Annexure-I — LEFT Bold+Underline title, ALL CENTER table ─────────────
+    # ── Page 2: Annexure-I ────────────────────────────────────────────────────
     story.append(Paragraph("<u>Annexure-I</u>", ann_ttl))
     story.append(_S(2))
 
     ann1 = [
         [Paragraph("Name",          ctr_st), Paragraph(d.get("full_name",""),               ctr_st)],
         [Paragraph("Designation",   ctr_st), Paragraph(designation,                          ctr_st)],
-        [Paragraph("Cadre",         ctr_st), Paragraph(d.get("cadre",""),                    ctr_st)],
+        [Paragraph("Grade",         ctr_st), Paragraph(grade,                                ctr_st)],
         [Paragraph("Scale",         ctr_st), Paragraph(d.get("scale",""),                    ctr_st)],
         [Paragraph("Department",    ctr_st), Paragraph(d.get("department",""),               ctr_st)],
         [Paragraph("Date of Birth", ctr_st), Paragraph(_fmt_date(d.get("date_of_birth","")), ctr_st)],
@@ -294,22 +376,19 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
         ("BACKGROUND",    (0,5), (-1,5),  colors.HexColor("#F4F5F9")),
         ("ALIGN",         (0,0), (-1,-1), "CENTER"),
         ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
-        ("TOPPADDING",    (0,0), (-1,-1), 6),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+        ("TOPPADDING",    (0,0), (-1,-1), 3),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 3),
     ]))
 
-    story += [ann1_tbl, _S(4)]
+    story += [ann1_tbl, _S(2)]
 
     # ── Annexure-II — LEFT Bold+Underline title, ALL CENTER 3-col table ──────
     story.append(Paragraph("<u>Annexure-II</u>", ann_ttl))
     story.append(_S(2))
 
-    try: ms_int = int(float(str(monthly_salary or 0)))
-    except: ms_int = 0
-
     ann2 = [
         [Paragraph("<b>Pay Component</b>", ctr_b), Paragraph("<b>Monthly Amount</b>", ctr_b), Paragraph("<b>Annual Amount</b>", ctr_b)],
-        [Paragraph("<b>Fixed</b>",         ctr_b), Paragraph(f"<b>{_fmt(ms_int)}</b>",  ctr_b), Paragraph(f"<b>{_fmt(yearly)}</b>",       ctr_b)],
+        [Paragraph("<b>Fixed</b>",         ctr_b), Paragraph(f"<b>{_fmt(monthly_salary)}</b>", ctr_b), Paragraph(f"<b>{_fmt(yearly)}</b>", ctr_b)],
         [Paragraph("Basic",                ctr_st), Paragraph(_fmt(basic),    ctr_st), Paragraph(_fmt(basic*12),   ctr_st)],
         [Paragraph("HRA",                  ctr_st), Paragraph(_fmt(hra),      ctr_st), Paragraph(_fmt(hra*12),     ctr_st)],
         [Paragraph("Conveyance Allowance", ctr_st), Paragraph(_fmt(convey),   ctr_st), Paragraph(_fmt(convey*12),  ctr_st)],
@@ -332,13 +411,13 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
         ("INNERGRID",     (0,0), (-1,-1), 0.4, colors.HexColor("#BDC7E0")),
         ("ALIGN",         (0,0), (-1,-1), "CENTER"),
         ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
-        ("TOPPADDING",    (0,0), (-1,-1), 5),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 5),
+        ("TOPPADDING",    (0,0), (-1,-1), 3),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 3),
         ("LEFTPADDING",   (0,0), (-1,-1), 6),
     ]))
 
     story += [
-        ann2_tbl, _S(4),
+        ann2_tbl, _S(2),
         Paragraph("<b>*NOTE: PF, ESI, and Professional Tax will be deducted as applicable</b>", note_st),
     ]
 
@@ -697,30 +776,30 @@ _BUILDERS = {
 
 def _merge_with_letterhead(content_bytes: bytes, letterhead_path: str) -> bytes:
     """Merges content PDF with letterhead on every page.
-    
-    Process for each page:
-    1. Get fresh copy of letterhead page
-    2. Apply white mask to block watermark in content area
-    3. Merge content page on top
+
+    Layer order (bottom to top):
+      1. Base PDF       — pure white + faint watermark
+      2. Letterhead PDF — header/footer graphics composite on top (opaque), body transparent
+      3. Content PDF    — text and tables
+
+    White goes under letterhead so header/footer are always crisp with no tint bleed.
     """
-    mask_bytes     = _make_white_mask_pdf()
-    lh_reader      = PdfReader(letterhead_path)
-    mask_reader    = PdfReader(io.BytesIO(mask_bytes))
+    base_bytes     = _make_base_pdf()
     content_reader = PdfReader(io.BytesIO(content_bytes))
 
     writer = PdfWriter()
     for content_page in content_reader.pages:
-        # Get fresh letterhead page (not a copy - read it fresh each time)
+        # Start with clean white + watermark base
+        base_page = PdfReader(io.BytesIO(base_bytes)).pages[0]
+
+        # Letterhead on top — header/footer images render crisp over white
         lh_page = PdfReader(letterhead_path).pages[0]
-        
-        # Apply mask
-        lh_page.merge_page(mask_reader.pages[0])
-        
-        # Apply content
-        lh_page.merge_page(content_page)
-        
-        # Add to output
-        writer.add_page(lh_page)
+        base_page.merge_page(lh_page)
+
+        # Content on top
+        base_page.merge_page(content_page)
+
+        writer.add_page(base_page)
 
     out = io.BytesIO()
     writer.write(out)
