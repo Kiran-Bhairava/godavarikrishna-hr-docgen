@@ -67,86 +67,169 @@ const LetterPreview = (() => {
     return `${String(d.getDate()).padStart(2,"0")}-${String(d.getMonth()+1).padStart(2,"0")}-${d.getFullYear()}`;
   }
 
-  // ── Shared letterhead wrapper — uses real GK header/footer images ─────────────
-  function wrap(bodyHtml) {
+  // ── A4 Page simulation — exact match to pdf_service.py layout ───────────────
+  // PDF margins: top=56mm, bot=32mm, left=18mm, right=18mm
+  // Each "page" div is A4 (210×297mm) with header/footer images and content frame.
+  // Page 1: letter body + required docs  |  Page 2: Annexure-I + Annexure-II
+  function wrapPages(page1Html, page2Html) {
+    const pageStyle = `
+      @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
+      *{box-sizing:border-box;margin:0;padding:0}
+      html,body{background:#e8ebf4;font-family:Helvetica,Arial,sans-serif}
+
+      /* A4 page shell */
+      .page{
+        width:210mm; min-height:297mm;
+        background:#fff;
+        position:relative;
+        display:flex; flex-direction:column;
+        margin:0 auto 20px;
+        box-shadow:0 4px 32px rgba(31,56,100,0.18);
+        overflow:hidden;
+        page-break-after:always;
+      }
+
+      /* Header image — full width, ~56mm tall */
+      .lh-header{width:100%;display:block;flex-shrink:0}
+      .lh-header img{width:100%;height:auto;display:block}
+
+      /* Content frame — mirrors pdf frame: left/right 18mm, below header, above footer */
+      .lh-body{
+        flex:1;
+        padding:4mm 18mm 6mm 18mm;
+        position:relative;
+        overflow:hidden;
+      }
+
+      /* Watermark — centered in body, very faint, matches pdf alpha=0.06 */
+      .wm{
+        position:absolute;
+        top:50%;left:50%;
+        transform:translate(-50%,-50%);
+        width:75mm;height:75mm;
+        opacity:0.06;
+        pointer-events:none;z-index:0;
+        object-fit:contain;
+      }
+      .lh-body>:not(.wm){position:relative;z-index:1}
+
+      /* Footer image — full width, ~32mm, pinned to bottom */
+      .lh-footer{width:100%;display:block;flex-shrink:0;margin-top:auto}
+      .lh-footer img{width:100%;height:auto;display:block}
+
+      /* ── Typography — mirrors pdf_service styles exactly ── */
+      /* title_st: Helvetica-Bold 12pt, CENTER, underline, spaceAfter=2 */
+      .doc-title{
+        font-size:12pt;font-weight:700;text-align:center;color:#1F3864;
+        text-decoration:underline;text-underline-offset:2px;
+        letter-spacing:.04em;margin-bottom:3pt;
+      }
+      /* date_st: Helvetica-Bold 10.5pt, RIGHT, spaceAfter=3 */
+      .date-line{font-size:10.5pt;font-weight:700;text-align:right;margin-bottom:4pt}
+      /* to_st: Helvetica-Bold 10.5pt, leftIndent=6, spaceAfter=1 */
+      .to-line{font-size:10.5pt;font-weight:700;margin-bottom:1pt;padding-left:6pt}
+      /* name_st: Helvetica-Bold 10.5pt, leftIndent=36, spaceAfter=4 */
+      .name-line{font-size:10.5pt;font-weight:700;padding-left:36pt;margin-bottom:5pt}
+      /* body_st: Helvetica 9.5pt, JUSTIFY, leading=14, leftIndent=6, spaceAfter=7 */
+      .body-p{
+        font-size:9.5pt;line-height:14pt;text-align:justify;
+        padding-left:6pt;margin-bottom:7pt;
+      }
+      /* italic_st: Helvetica-Oblique 9.5pt, JUSTIFY, leading=13, spaceAfter=3 */
+      .italic-p{
+        font-size:9.5pt;line-height:13pt;text-align:justify;font-style:italic;
+        padding-left:6pt;margin-bottom:3pt;
+      }
+      /* left_st: Helvetica 9.5pt, LEFT, leading=13, spaceAfter=7 */
+      .left-p{font-size:9.5pt;line-height:13pt;text-align:left;margin-bottom:7pt}
+      /* ann_ttl: Helvetica-Bold 11pt, LEFT, underline, spaceAfter=3, spaceBefore=4 */
+      .ann-title{
+        font-size:11pt;font-weight:700;text-align:left;color:#1F3864;
+        text-decoration:underline;text-underline-offset:2px;
+        margin-top:4pt;margin-bottom:3pt;
+      }
+      /* ctr_st: Helvetica 9pt, CENTER, leading=11 */
+      /* ctr_b:  Helvetica-Bold 9pt, CENTER, leading=11 */
+      /* note_st: Helvetica-Bold 9.5pt, LEFT */
+      .note{font-size:9.5pt;font-weight:700;text-align:left;margin-top:3pt}
+
+      /* Required docs table */
+      .docs-table{
+        width:100%;border-collapse:collapse;margin-top:3pt;margin-bottom:0;
+        font-size:8.5pt;
+      }
+      .docs-table th{
+        background:#F5C518;color:#1F3864;text-align:center;
+        padding:4pt 6pt;font-size:10pt;font-weight:700;
+        text-decoration:underline;border:1.2pt solid #1F3864;
+      }
+      .docs-table td{
+        border:0.8pt solid #1F3864;padding:6pt 6pt;
+        vertical-align:top;text-align:justify;
+        line-height:11pt;width:50%;
+      }
+
+      /* Annexure tables */
+      .ann1-table{width:100%;border-collapse:collapse;margin-bottom:4pt;font-size:9pt}
+      .ann1-table td{
+        border:0.8pt solid #BDC7E0;padding:3pt 4pt;text-align:center;vertical-align:middle;
+      }
+      .ann1-table tr:nth-child(even) td{background:#F4F5F9}
+      .ann1-table td:first-child{width:35%;background:#F4F5F9}
+
+      .ann2-table{width:100%;border-collapse:collapse;margin-bottom:4pt;font-size:9pt}
+      .ann2-table th{
+        background:#1F3864;color:#fff;padding:3pt 6pt;
+        text-align:center;border:0.8pt solid #BDC7E0;font-size:9pt;
+      }
+      .ann2-table td{
+        border:0.8pt solid #BDC7E0;padding:3pt 6pt;
+        text-align:center;vertical-align:middle;font-size:9pt;
+      }
+      .ann2-table .row-fixed td{font-weight:700}
+      .ann2-table .row-alt td{background:#F4F5F9}
+      .ann2-table .row-gross td{background:#D9E1F2;font-weight:700}
+      .ann2-table .row-empf td{background:#F4F5F9}
+      .ann2-table .row-ctc td{background:#D9E1F2;font-weight:700}
+
+      b{font-weight:700}
+      u{text-decoration:underline}
+      i,em{font-style:italic}
+    `;
+
+    const pageTemplate = (bodyHtml, isFirstPage) => `
+    <div class="page">
+      <div class="lh-header">
+        <img src="${_imgCache.header || '/gk_header.jpeg'}" alt="GK Letterhead"/>
+      </div>
+      <div class="lh-body">
+        <img class="wm" src="${_imgCache.watermark || '/watermark.jpeg'}" alt=""/>
+        ${bodyHtml}
+      </div>
+      <div class="lh-footer">
+        <img src="${_imgCache.footer || '/gk_footer.jpeg'}" alt=""/>
+      </div>
+    </div>`;
+
     return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8"/>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:#1a1a1a;background:#fff}
-  .page{width:100%;min-height:100vh;display:flex;flex-direction:column;background:#fff}
-
-  /* HEADER IMAGE */
-  .lh-img{width:100%;display:block;line-height:0}
-  .lh-img img{width:100%;height:auto;display:block}
-
-  /* CONTENT */
-  .content{flex:1;padding:18px 30px 20px;position:relative;overflow:hidden}
-  .wm{
-    position:absolute;top:50%;left:50%;
-    transform:translate(-50%,-50%);
-    width:500px;height:500px;
-    opacity:0.55;pointer-events:none;z-index:0;
-    object-fit:contain;
-  }
-  .content>:not(.wm){position:relative;z-index:1}
-
-  .doc-title{font-size:12pt;font-weight:700;text-align:center;color:#1F3864;
-             letter-spacing:.07em;margin-bottom:2px;
-             text-decoration:underline;text-underline-offset:3px}
-  .title-rule{height:1.5px;background:#1F3864;margin-bottom:16px}
-  .date-line{font-size:10pt;margin-bottom:10px}
-  .to-block{margin-bottom:13px;line-height:1.85;font-size:10pt}
-  p{font-size:10pt;line-height:1.75;margin-bottom:10px;text-align:justify}
-  b{font-weight:700}i{font-style:italic}
-
-  table{width:100%;border-collapse:collapse;margin-bottom:11px;font-size:9pt}
-  th,td{padding:5px 8px;border:1px solid #aaa;text-align:left;vertical-align:top}
-  thead th{background:#1F3864;color:#fff;font-weight:700;text-align:center}
-  .row-alt{background:#f4f5f9}
-  .cell-label{background:#e6eaf4;font-weight:700;color:#1F3864;width:36%}
-
-  .annex-title{font-size:10pt;font-weight:700;color:#1F3864;
-               margin:14px 0 5px;border-bottom:1.5px solid #1F3864;padding-bottom:2px}
-  .sig-row{display:flex;justify-content:space-between;margin-top:28px}
-  .sig-col{width:48%}
-  .sig-org{font-size:8.5pt;color:#555;margin-bottom:22px}
-  .sig-name{font-weight:700;font-size:10pt;color:#111}
-  .sig-title{font-size:8.5pt;color:#555}
-  .note{font-size:8.5pt;font-weight:700;margin-top:8px;color:#333}
-
-  /* FOOTER IMAGE */
-  .lh-footer-img{width:100%;display:block;line-height:0;margin-top:auto}
-  .lh-footer-img img{width:100%;height:auto;display:block}
-</style>
+<style>${pageStyle}</style>
 </head>
 <body>
-<div class="page">
-
-  <!-- HEADER: real GK letterhead image -->
-  <div class="lh-img">
-    <img src="${_imgCache.header || '/gk_header.jpeg'}" alt="Godavari Krishna Co-Op Society Letterhead"/>
-  </div>
-
-  <!-- CONTENT -->
-  <div class="content">
-    <img class="wm" src="${_imgCache.watermark || '/watermark.jpeg'}" alt=""/>
-    ${bodyHtml}
-  </div>
-
-  <!-- FOOTER: real GK wave strip image -->
-  <div class="lh-footer-img">
-    <img src="${_imgCache.footer || '/gk_footer.jpeg'}" alt=""/>
-  </div>
-
-</div>
+${pageTemplate(page1Html, true)}
+${page2Html ? pageTemplate(page2Html, false) : ''}
 </body>
 </html>`;
   }
 
-  // ── Dual signature block ───────────────────────────────────────────────────
+  // Single-page wrap for letters that don't need 2 pages (appointment etc.)
+  function wrap(bodyHtml) {
+    return wrapPages(bodyHtml, null);
+  }
+
+    // ── Dual signature block ───────────────────────────────────────────────────
   function sigBlock() {
     return `<div class="sig-row">
       <div class="sig-col">
@@ -203,7 +286,7 @@ const LetterPreview = (() => {
     return row ? { grade: row.grade, scale: row.scale } : { grade: "", scale: "" };
   }
 
-  // ── 1. Offer Letter ────────────────────────────────────────────────────────
+  // ── 1. Offer Letter — 2 pages, pixel-perfect match to pdf_service.py ───────
   function offerLetter(d, dateStr) {
     const ms     = Math.round(Number(d.monthly_salary) || 0);
     const basic  = Math.round(ms * 0.40);
@@ -218,171 +301,104 @@ const LetterPreview = (() => {
     const monthlyWords = indianWords(ms);
     const yearlyWords  = indianWords(yearly);
 
-    // Auto-lookup grade and scale from salary grid
-    const _gs    = lookupGradeScale(ms);
-    const grade  = d.grade  || _gs.grade;
-    const scale  = d.scale  || _gs.scale;
+    const _gs   = lookupGradeScale(ms);
+    const grade = d.grade || _gs.grade;
+    const scale = d.scale || _gs.scale;
 
     function fmt(v) { return v ? Number(v).toLocaleString("en-IN") : ""; }
-    const monthly = ms ? fmt(ms) : "";
-    const yearlyFmt = yearly ? fmt(yearly) : "";
 
-    return wrap(`
-      <!-- Title: CENTER, Bold+Underline -->
-      <div style="text-align:center;font-size:12pt;font-weight:700;
-                  text-decoration:underline;text-underline-offset:3px;
-                  letter-spacing:.06em;color:#1F3864;margin-bottom:2px">
-        LETTER OF EMPLOYMENT
-      </div>
-      <div style="height:1.5px;background:#1F3864;margin-bottom:14px"></div>
+    // ── PAGE 1: Letter body + Required Documents ──────────────────────────────
+    const page1 = `
+      <div class="doc-title">LETTER OF EMPLOYMENT</div>
+      <div class="date-line">Date: ${dateStr}</div>
+      <div class="to-line">To,</div>
+      <div class="name-line">Mr./Ms. ${d.full_name || ""},</div>
 
-      <!-- Date: RIGHT, Bold -->
-      <div style="text-align:right;font-weight:700;font-size:10pt;margin-bottom:10px">
-        Date: ${dateStr}
-      </div>
+      <p class="body-p">In continuation of our discussions on possible employment with M/s Godavari Krishna Co-Op Society Limited Vijayawada, we are pleased to make you an offer as <b>${d.designation || ""}</b> Initially as per the norms fixed in the Appointment letter and Duty list. Your complete appointment letter will be processed on the date of joining post completion of your joining formalities with Godavari Krishna Co-Operative Society Limited.</p>
 
-      <!-- To block -->
-      <div style="font-weight:700;font-size:10pt;margin-bottom:4px;padding-left:8px">To,</div>
-      <div style="font-weight:700;font-size:10pt;margin-bottom:14px;padding-left:40px">Mr./Ms. ${d.full_name || ""},</div>
+      <p class="body-p">Your fixed remuneration will be INR <b><u>${fmt(ms)}/-</u></b> (in words Rupees <b><u>${monthlyWords}</u></b> only) per month and INR <b>${fmt(yearly)}/-</b> (in words Rupees <b><u>${yearlyWords}</u></b>) per annum.</p>
 
-      <p style="text-align:justify;padding-left:8px">In continuation of our discussions on possible employment with M/s Godavari Krishna Co-Op Society Limited Vijayawada, we are pleased to make you an offer as <b>${d.designation || ""}</b> Initially as per the norms fixed in the Appointment letter and Duty list. Your complete appointment letter will be processed on the date of joining post completion of your joining formalities with Godavari Krishna Co-Operative Society Limited.</p>
+      <p class="italic-p">(Your remuneration details are attached in Annexure – II for your reference).</p>
 
-      <p style="text-align:justify;padding-left:8px">Your fixed remuneration will be INR <b><u>${monthly}/-</u></b> (in words Rupees <b><u>${monthlyWords}</u></b> only) per month and INR <b>${yearlyFmt}/-</b> (in words Rupees <b><u>${yearlyWords}</u></b> only) per annum.</p>
+      <p class="body-p">It is mandatory to achieve your monthly set target of business given by your superior, to justify your monthly fixed pay. Your career with us is based on your performance and achievement of the set business goals and Objectives of the Organization. As discussed with you during your interview, your 'Salary / Position' or maybe both will be revised after the first 6 months after you join, such revision shall be purely based on the level of your performance in these first 6 months.</p>
 
-      <p style="text-align:justify;padding-left:8px;font-style:italic">(Your remuneration details are attached in Annexure – II for your reference).</p>
+      <p class="body-p">If the Employee wants to resign from their duties/Job role within One year of their service in such case the Employee has to serve three months of Notice Period or has to pay three months of their Salary to the Society. If the Employee wants to resign from their duties/Job role after one year of their service in such case the Employee has to serve two months of Notice Period or has to pay two months of their Salary to the Society. At the time of joining, you are advised to carry your true copies of all your credentials along with the list of documents mentioned below.</p>
 
-      <p style="text-align:justify;padding-left:8px">It is mandatory to achieve your monthly set target of business given by your superior, to justify your monthly fixed pay. Your career with us is based on your performance and achievement of the set business goals and Objectives of the Organization. As discussed with you during your interview, your 'Salary / Position' or maybe both will be revised after the first 6 months after you join, such revision shall be purely based on the level of your performance in these first 6 months.</p>
+      <p class="body-p">You have to submit the following details for generating your employment with the Society.</p>
 
-      <p style="text-align:justify;padding-left:8px">If the Employee wants to resign from their duties/Job role within One year of their service in such case the Employee has to serve three months of Notice Period or has to pay three months of their Salary to the Society. If the Employee wants to resign from their duties/Job role after one year of their service in such case the Employee has to serve two months of Notice Period or has to pay two months of their Salary to the Society. At the time of joining, you are advised to carry your true copies of all your credentials along with the list of documents mentioned below.</p>
-
-      <p style="text-align:justify;padding-left:8px">You have to submit the following details for generating your employment with the Society.</p>
-
-      <!-- Required Documents — yellow header, ➤ bullets, justify, page-break-inside:auto -->
-      <table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:9.8pt;page-break-inside:auto">
+      <!-- Required Documents table — yellow header, ► bullets -->
+      <table class="docs-table">
         <thead>
-          <tr>
-            <th colspan="2" style="background:#F5C518;color:#1F3864;text-align:center;
-                padding:7px 10px;font-size:10.5pt;font-weight:700;
-                text-decoration:underline;text-underline-offset:3px;
-                border:1.5px solid #1F3864">
-              Required Documents
-            </th>
-          </tr>
+          <tr><th colspan="2">Required Documents</th></tr>
         </thead>
         <tbody>
-          <tr style="vertical-align:top">
-            <td style="border:1.5px solid #1F3864;padding:7px 10px;width:50%;text-align:justify;line-height:1.8">
-              &#10148; Aadhaar Card &amp; PAN Card.<br>
-              &#10148; 3 Pass Port Size Photos (White Back Ground).<br>
-              &#10148; Academic Certificates: SSC, Inter, Degree &amp; PG if any.<br>
-              &#10148; Police Verification Certificate. (15 Days will be given to obtain this certificate and can be obtained through E Seva also).<br>
-              &#10148; Nominee Pass Port Size Photo, Aadhaar Card &amp; PAN Card (For the sake of PF &amp; ESI).<br>
-              &#10148; PF service history &amp; PF passbook Statement (Available in UAN Log in).
+          <tr>
+            <td>
+              &#9658; Aadhaar Card &amp; PAN Card.<br>
+              &#9658; 3 Pass Port Size Photos (White Back Ground).<br>
+              &#9658; Academic Certificates: SSC, Inter, Degree &amp; PG if any.<br>
+              &#9658; Police Verification Certificate. (15 Days will be given to obtain this certificate and can be obtained through E Seva also).<br>
+              &#9658; Nominee Pass Port Size Photo, Aadhaar Card &amp; PAN Card (For the sake of PF &amp; ESI).<br>
+              &#9658; PF service history &amp; PF passbook Statement (Available in UAN Log in).
             </td>
-            <td style="border:1.5px solid #1F3864;padding:7px 10px;width:50%;text-align:justify;line-height:1.8">
-              &#10148; 2 Nationalised Bank Cheques.<br>
-              &#10148; Bank A/C Passbook Xerox (Front Page) or Cancelled Cheque.<br>
-              &#10148; Previous Employment Offer Letters.<br>
-              &#10148; Play Slips: Latest 3 Months and Salary Account Statement.<br>
-              &#10148; Relieving Letter.<br>
-              &#10148; Physical fitness certificate by Govt. physician.
+            <td>
+              &#9658; 2 Nationalised Bank Cheques.<br>
+              &#9658; Bank A/C Passbook Xerox (Front Page) or Cancelled Cheque.<br>
+              &#9658; Previous Employment Offer Letters.<br>
+              &#9658; Play Slips: Latest 3 Months and Salary Account Statement.<br>
+              &#9658; Relieving Letter.<br>
+              &#9658; Physical fitness certificate by Govt. physician.
             </td>
           </tr>
         </tbody>
       </table>
 
-      <p style="font-size:9.5pt">(You should submit these details within <b>7 days</b> from the date of receipt of this OFFER.)</p>
-      <p>This is only an offer of employment and you shall communicate your acceptance of this offer within <b>3 days</b> from the receipt thereof, failing which this offer shall stand cancelled.</p>
+      <p class="left-p" style="margin-top:5pt">(You should submit these details within <b>7 days</b> from the date of receipt of this OFFER.)</p>
+      <p class="left-p">This is only an offer of employment and you shall communicate your acceptance of this offer within <b>3 days</b> from the receipt thereof, failing which this offer shall stand cancelled.</p>
+    `;
 
-      <!-- Annexure-I: LEFT Bold+Underline title, ALL CENTER table -->
-      <div style="font-weight:700;text-decoration:underline;text-underline-offset:3px;font-size:10.5pt;margin:14px 0 6px">Annexure-I</div>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:9.5pt">
+    // ── PAGE 2: Annexure-I + Annexure-II ─────────────────────────────────────
+    const page2 = `
+      <div class="ann-title">Annexure-I</div>
+      <table class="ann1-table">
         <tbody>
-          <tr>
-            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center;width:38%">Name</td>
-            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">${d.full_name || ""}</td>
-          </tr>
-          <tr style="background:#f4f5f9">
-            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">Designation</td>
-            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">${d.designation || ""}</td>
-          </tr>
-          <tr>
-            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">Grade</td>
-            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">${grade}</td>
-          </tr>
-          <tr style="background:#f4f5f9">
-            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">Scale</td>
-            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">${scale}</td>
-          </tr>
-          <tr>
-            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">Department</td>
-            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">${d.department || ""}</td>
-          </tr>
-          <tr style="background:#f4f5f9">
-            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">Date of Birth</td>
-            <td style="border:1px solid #aaa;padding:6px 10px;text-align:center">${fmtDate(d.date_of_birth)}</td>
-          </tr>
+          <tr><td>Name</td><td>${d.full_name || ""}</td></tr>
+          <tr><td>Designation</td><td>${d.designation || ""}</td></tr>
+          <tr><td>Grade</td><td>${grade}</td></tr>
+          <tr><td>Scale</td><td>${scale}</td></tr>
+          <tr><td>Department</td><td>${d.department || ""}</td></tr>
+          <tr><td>Date of Birth</td><td>${fmtDate(d.date_of_birth)}</td></tr>
         </tbody>
       </table>
 
-      <!-- Annexure-II: LEFT Bold+Underline title, ALL CENTER 3-col table -->
-      <div style="font-weight:700;text-decoration:underline;text-underline-offset:3px;font-size:10.5pt;margin:14px 0 6px">Annexure-II</div>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:10px;font-size:9.5pt">
+      <div class="ann-title" style="margin-top:6pt">Annexure-II</div>
+      <table class="ann2-table">
         <thead>
           <tr>
-            <th style="border:1px solid #aaa;padding:6px 8px;text-align:center;background:#1F3864;color:#fff">Pay Component</th>
-            <th style="border:1px solid #aaa;padding:6px 8px;text-align:center;background:#1F3864;color:#fff">Monthly Amount</th>
-            <th style="border:1px solid #aaa;padding:6px 8px;text-align:center;background:#1F3864;color:#fff">Annual Amount</th>
+            <th style="width:42%">Pay Component</th>
+            <th style="width:29%">Monthly Amount</th>
+            <th style="width:29%">Annual Amount</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>Fixed</b></td>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>${fmt(ms)}</b></td>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>${yearlyFmt}</b></td>
-          </tr>
-          <tr style="background:#f4f5f9">
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">Basic</td>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(basic)}</td>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(basic*12)}</td>
-          </tr>
-          <tr>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">HRA</td>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(hra)}</td>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(hra*12)}</td>
-          </tr>
-          <tr style="background:#f4f5f9">
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">Conveyance Allowance</td>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(convey)}</td>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(convey*12)}</td>
-          </tr>
-          <tr>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">Special Allowance</td>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(spl)}</td>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(spl*12)}</td>
-          </tr>
-          <tr style="background:#d9e1f2">
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>Gross Salary</b></td>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>${fmt(gross)}</b></td>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>${fmt(gross*12)}</b></td>
-          </tr>
-          <tr style="background:#f4f5f9">
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">Employer PF</td>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(empPF)}</td>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center">${fmt(empPF*12)}</td>
-          </tr>
-          <tr style="background:#d9e1f2">
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>CTC</b></td>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>${fmt(ctc)}</b></td>
-            <td style="border:1px solid #aaa;padding:5px 8px;text-align:center"><b>${fmt(ctc*12)}</b></td>
-          </tr>
+          <tr class="row-fixed"><td><b>Fixed</b></td><td><b>${fmt(ms)}</b></td><td><b>${fmt(yearly)}</b></td></tr>
+          <tr class="row-alt"><td>Basic</td><td>${fmt(basic)}</td><td>${fmt(basic*12)}</td></tr>
+          <tr><td>HRA</td><td>${fmt(hra)}</td><td>${fmt(hra*12)}</td></tr>
+          <tr class="row-alt"><td>Conveyance Allowance</td><td>${fmt(convey)}</td><td>${fmt(convey*12)}</td></tr>
+          <tr><td>Special Allowance</td><td>${fmt(spl)}</td><td>${fmt(spl*12)}</td></tr>
+          <tr class="row-gross"><td><b>Gross Salary</b></td><td><b>${fmt(gross)}</b></td><td><b>${fmt(gross*12)}</b></td></tr>
+          <tr class="row-empf"><td>Employer PF</td><td>${fmt(empPF)}</td><td>${fmt(empPF*12)}</td></tr>
+          <tr class="row-ctc"><td><b>CTC</b></td><td><b>${fmt(ctc)}</b></td><td><b>${fmt(ctc*12)}</b></td></tr>
         </tbody>
       </table>
 
-      <div style="font-weight:700;font-size:9pt;margin-top:6px">*NOTE: PF, ESI, and Professional Tax will be deducted as applicable</div>
-    `);
+      <p class="note">*NOTE: PF, ESI, and Professional Tax will be deducted as applicable</p>
+    `;
+
+    return wrapPages(page1, page2);
   }
-  // ── 2. Appointment Letter ──────────────────────────────────────────────────
+
+    // ── 2. Appointment Letter ──────────────────────────────────────────────────
   function appointmentLetter(d, dateStr) {
     function n(k) { return Number(d[k] || 0); }
     const gross = n("basic") + n("hra") + n("medical") + n("special_allowance") + n("da");
