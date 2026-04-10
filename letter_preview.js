@@ -75,37 +75,29 @@ const LetterPreview = (() => {
     const pageStyle = `
       @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
       *{box-sizing:border-box;margin:0;padding:0}
-      html,body{background:#e8ebf4;font-family:Helvetica,Arial,sans-serif;overflow-x:hidden}
+      html,body{background:#e8ebf4;font-family:Helvetica,Arial,sans-serif;
+                overflow-x:hidden;width:100%}
 
-      /* Scale wrapper — shrinks A4 (210mm) to fit 100% of iframe width */
-      .scaler{
-        width:100%;
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        padding:12px 0;
-      }
-      /* A4 page shell — fixed 210mm width, scaled down via JS to fit container */
+      /* A4 page shell — fluid width, scales to iframe container */
       .page{
-        width:210mm; min-height:297mm;
+        width:100%;
         background:#fff;
         position:relative;
         display:flex; flex-direction:column;
-        margin:0 0 16px 0;
+        margin:0 0 8px 0;
         box-shadow:0 4px 32px rgba(31,56,100,0.18);
         overflow:hidden;
         page-break-after:always;
-        transform-origin:top center;
       }
 
       /* Header image — full width, ~56mm tall */
       .lh-header{width:100%;display:block;flex-shrink:0}
       .lh-header img{width:100%;height:auto;display:block}
 
-      /* Content frame — mirrors pdf frame: left/right 18mm, below header, above footer */
+      /* Content frame — mirrors pdf frame: left/right ~8.5% (18mm of 210mm), top/bottom small */
       .lh-body{
         flex:1;
-        padding:4mm 18mm 6mm 18mm;
+        padding:1.5% 8.5% 2% 8.5%;
         position:relative;
         overflow:hidden;
       }
@@ -115,7 +107,7 @@ const LetterPreview = (() => {
         position:absolute;
         top:50%;left:50%;
         transform:translate(-50%,-50%);
-        width:75mm;height:75mm;
+        width:35%;height:35%;
         opacity:0.06;
         pointer-events:none;z-index:0;
         object-fit:contain;
@@ -226,32 +218,9 @@ const LetterPreview = (() => {
 <meta charset="UTF-8"/>
 <style>${pageStyle}</style>
 </head>
-<body>
-<div class="scaler" id="scaler">
-  ${pageTemplate(page1Html, true)}
-  ${page2Html ? pageTemplate(page2Html, false) : ''}
-</div>
-<script>
-  // Scale all .page divs to fit the available width without horizontal scroll
-  function scalePage() {
-    const pages = document.querySelectorAll('.page');
-    if (!pages.length) return;
-    const available = document.documentElement.clientWidth - 24; // 12px padding each side
-    const pageW = pages[0].offsetWidth; // actual rendered 210mm in px
-    if (pageW <= 0) return;
-    const scale = Math.min(1, available / pageW);
-    pages.forEach(p => {
-      p.style.transform = 'scale(' + scale + ')';
-      p.style.marginBottom = scale < 1
-        ? (-(pageW * (1 - scale)) / 2 + 16) + 'px'  // collapse scaled whitespace
-        : '16px';
-    });
-    // Set scaler height so page doesn't clip
-    document.getElementById('scaler').style.paddingBottom = '12px';
-  }
-  scalePage();
-  window.addEventListener('resize', scalePage);
-<\/script>
+<body style="margin:0;padding:0;background:#e8ebf4">
+${pageTemplate(page1Html, true)}
+${page2Html ? pageTemplate(page2Html, false) : ''}
 </body>
 </html>`;
   }
