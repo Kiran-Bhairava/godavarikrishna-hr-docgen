@@ -287,6 +287,15 @@ ${page2Html ? pageTemplate(page2Html, false) : ''}
     return row ? { grade: row.grade, scale: row.scale } : { grade: "", scale: "" };
   }
 
+  // ── Salutation — mirrors pdf_service._salutation ──────────────────────────
+  function salutation(gender, maritalStatus) {
+    const g = (gender || "").trim().toLowerCase();
+    const m = (maritalStatus || "").trim().toLowerCase();
+    if (g === "male")   return "Mr.";
+    if (g === "female") return (m === "married" || m === "divorced") ? "Mrs." : "Ms.";
+    return "Mx.";
+  }
+
   // ── 1. Offer Letter — 2 pages, pixel-perfect match to pdf_service.py ───────
   function offerLetter(d, dateStr) {
     const ms     = Math.round(Number(d.monthly_salary) || 0);
@@ -305,6 +314,7 @@ ${page2Html ? pageTemplate(page2Html, false) : ''}
     const _gs   = lookupGradeScale(ms);
     const grade = d.grade || _gs.grade;
     const scale = d.scale || _gs.scale;
+    const sal   = salutation(d.gender, d.marital_status);
 
     function fmt(v) { return v ? Number(v).toLocaleString("en-IN") : ""; }
 
@@ -313,7 +323,7 @@ ${page2Html ? pageTemplate(page2Html, false) : ''}
       <div class="doc-title">LETTER OF EMPLOYMENT</div>
       <div class="date-line">Date: ${dateStr}</div>
       <div class="to-line">To,</div>
-      <div class="name-line">Mr./Ms. ${d.full_name || ""},</div>
+      <div class="name-line">${sal} ${d.full_name || ""},</div>
 
       <p class="body-p">In continuation of our discussions on possible employment with M/s Godavari Krishna Co-Op Society Limited Vijayawada, we are pleased to make you an offer as <b>${d.designation || ""}</b> Initially as per the norms fixed in the Appointment letter and Duty list. Your complete appointment letter will be processed on the date of joining post completion of your joining formalities with Godavari Krishna Co-Operative Society Limited.</p>
 
@@ -368,7 +378,8 @@ ${page2Html ? pageTemplate(page2Html, false) : ''}
           <tr><td>Grade</td><td>${grade}</td></tr>
           <tr><td>Scale</td><td>${scale}</td></tr>
           <tr><td>Department</td><td>${d.department || ""}</td></tr>
-          <tr><td>Date of Birth</td><td>${fmtDate(d.date_of_birth)}</td></tr>
+          <tr><td>Gender</td><td>${d.gender || ""}</td></tr>
+          <tr><td>Marital Status</td><td>${d.marital_status || ""}</td></tr>
         </tbody>
       </table>
 

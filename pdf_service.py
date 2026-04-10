@@ -193,6 +193,24 @@ def _dual_sign_table(cw, st,
     return t
 
 
+
+def _salutation(gender: str, marital_status: str) -> str:
+    """Derive correct salutation from gender and marital status.
+    Male              → Mr.
+    Female + Married  → Mrs.
+    Female + Divorced → Mrs.
+    Female + other    → Ms.
+    Others/blank      → Mx.
+    """
+    g = (gender or "").strip().lower()
+    m = (marital_status or "").strip().lower()
+    if g == "male":
+        return "Mr."
+    if g == "female":
+        return "Mrs." if m in ("married", "divorced") else "Ms."
+    return "Mx."
+
+
 # ── 1. Offer Letter ───────────────────────────────────────────────────────────
 
 def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
@@ -225,6 +243,9 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
     _auto_grade, _auto_scale = _lookup_grade_scale(monthly_salary)
     grade = d.get("grade") or _auto_grade
     scale = d.get("scale") or _auto_scale
+
+    # Salutation derived from gender + marital_status
+    salutation = _salutation(d.get("gender", ""), d.get("marital_status", ""))
 
     def _fmt(v): return f"{v:,}" if v else ""
 
@@ -261,7 +282,7 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
         # HRFlowable(width=CW, thickness=1, color=colors.HexColor("#1F3864"), spaceAfter=4),
         Paragraph(f"<b>Date: {date_str}</b>", date_st),
         Paragraph("<b>To,</b>", to_st),
-        Paragraph(f"<b>Mr./Ms. {d.get('full_name', '')},</b>", name_st),
+        Paragraph(f"<b>{salutation} {d.get('full_name', '')},</b>", name_st),
         Paragraph(
             f"In continuation of our discussions on possible employment with M/s Godavari Krishna "
             f"Co-Op Society Limited Vijayawada, we are pleased to make you an offer as "
@@ -360,12 +381,13 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
     story.append(_S(2))
 
     ann1 = [
-        [Paragraph("Name",          ctr_st), Paragraph(d.get("full_name",""),               ctr_st)],
-        [Paragraph("Designation",   ctr_st), Paragraph(designation,                          ctr_st)],
-        [Paragraph("Grade",         ctr_st), Paragraph(grade,                                ctr_st)],
-        [Paragraph("Scale",         ctr_st), Paragraph(d.get("scale",""),                    ctr_st)],
-        [Paragraph("Department",    ctr_st), Paragraph(d.get("department",""),               ctr_st)],
-        [Paragraph("Date of Birth", ctr_st), Paragraph(_fmt_date(d.get("date_of_birth","")), ctr_st)],
+        [Paragraph("Name",           ctr_st), Paragraph(d.get("full_name",""),    ctr_st)],
+        [Paragraph("Designation",    ctr_st), Paragraph(designation,               ctr_st)],
+        [Paragraph("Grade",          ctr_st), Paragraph(grade,                     ctr_st)],
+        [Paragraph("Scale",          ctr_st), Paragraph(d.get("scale",""),         ctr_st)],
+        [Paragraph("Department",     ctr_st), Paragraph(d.get("department",""),    ctr_st)],
+        [Paragraph("Gender",         ctr_st), Paragraph(d.get("gender",""),        ctr_st)],
+        [Paragraph("Marital Status", ctr_st), Paragraph(d.get("marital_status",""),ctr_st)],
     ]
     ann1_tbl = Table(ann1, colWidths=[CW*0.35, CW*0.65])
     ann1_tbl.setStyle(TableStyle([
@@ -374,6 +396,7 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
         ("BACKGROUND",    (0,1), (-1,1),  colors.HexColor("#F4F5F9")),
         ("BACKGROUND",    (0,3), (-1,3),  colors.HexColor("#F4F5F9")),
         ("BACKGROUND",    (0,5), (-1,5),  colors.HexColor("#F4F5F9")),
+        ("BACKGROUND",    (0,6), (-1,6),  colors.HexColor("#F4F5F9")),
         ("ALIGN",         (0,0), (-1,-1), "CENTER"),
         ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
         ("TOPPADDING",    (0,0), (-1,-1), 3),

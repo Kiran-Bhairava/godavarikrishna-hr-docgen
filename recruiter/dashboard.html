@@ -870,7 +870,13 @@
           {
             title: "Identity & Role",
             icon: "🪪",
-            fields: ["full_name", "designation", "department", "date_of_birth"],
+            fields: [
+              "full_name",
+              "gender",
+              "marital_status",
+              "designation",
+              "department",
+            ],
           },
           {
             title: "Compensation",
@@ -982,6 +988,8 @@
 
       // Hints shown below specific fields
       const FIELD_HINTS = {
+        gender: "Determines salutation (Mr./Ms./Mrs./Mx.)",
+        marital_status: "Combined with gender for Mrs. vs Ms.",
         monthly_salary: "Grade & Scale auto-fill from this",
         grade: "Auto-filled — override if needed",
         scale: "Auto-filled — override if needed",
@@ -1260,9 +1268,15 @@
           const form_data = {};
           currentFields.forEach((f) => {
             const el = document.getElementById(`field_${f.name}`);
-            if (el)
+            if (!el) return;
+            if (f.type === "select" && el.value === "Other") {
+              // Use the custom text input value for Other
+              const otherEl = document.getElementById(`field_${f.name}_other`);
+              form_data[f.name] = otherEl ? otherEl.value.trim() : "";
+            } else {
               form_data[f.name] =
                 f.type === "number" ? Number(el.value) : el.value;
+            }
           });
           // Auto-fill grade/scale for offer_letter when salary changes
           if (type.code === "offer_letter") {
@@ -1345,20 +1359,51 @@
         const full = FULL_WIDTH_FIELDS.has(f.name) ? "field-full" : "";
         const req = f.required ? '<span class="field-required">*</span>' : "";
 
-        // SELECT field
+        // SELECT field — with optional "Other" inline text input
         if (f.type === "select" && Array.isArray(f.options)) {
-          const opts = f.options
+          // Check if saved value is a custom "Other" entry
+          const knownOpts = f.options;
+          const isCustom = val && !knownOpts.includes(val) && val !== "";
+          const selectVal = isCustom ? "Other" : val;
+
+          const opts = knownOpts
             .map(
               (o) =>
-                `<option value="${o}" ${val === o ? "selected" : ""}>${o}</option>`,
+                `<option value="${o}" ${selectVal === o ? "selected" : ""}>${o}</option>`,
             )
             .join("");
+
+          // "Other" option — only for designation and department dropdowns
+          const hasOther = ["designation", "department"].includes(f.name);
+          const otherOpt = hasOther
+            ? `<option value="Other" ${selectVal === "Other" ? "selected" : ""}>Other (specify)</option>`
+            : "";
+          const otherInput = hasOther
+            ? `
+            <input type="text" class="field-input" id="field_${f.name}_other"
+              style="margin-top:6px;display:${isCustom ? "block" : "none"}"
+              placeholder="Type custom ${f.label.toLowerCase()}..."
+              value="${isCustom ? val : ""}"
+              oninput="
+                document.getElementById('field_${f.name}').dataset.custom = this.value;
+                schedulePreview();
+              "/>`
+            : "";
+
           return `<div class="field-wrap ${full}">
             <div class="field-label">${f.label} ${req}</div>
-            <select class="field-input" id="field_${f.name}" onchange="schedulePreview()">
+            <select class="field-input" id="field_${f.name}"
+              onchange="
+                const other = document.getElementById('field_${f.name}_other');
+                if (other) other.style.display = this.value === 'Other' ? 'block' : 'none';
+                if (this.value !== 'Other') delete this.dataset.custom;
+                schedulePreview();
+              ">
               <option value="">— Select —</option>
               ${opts}
+              ${otherOpt}
             </select>
+            ${otherInput}
             ${hint ? `<div class="field-hint">${hint}</div>` : ""}
           </div>`;
         }
@@ -1367,7 +1412,6 @@
         const itype =
           f.type === "number" ? "number" : f.type === "date" ? "date" : "text";
 
-        // For grade/scale — add auto-fill on monthly_salary change
         const extraAttr =
           f.name === "grade" || f.name === "scale"
             ? `placeholder="Auto-filled from salary"`
@@ -1455,9 +1499,14 @@
         const form_data = {};
         currentFields.forEach((f) => {
           const el = document.getElementById(`field_${f.name}`);
-          if (el)
+          if (!el) return;
+          if (f.type === "select" && el.value === "Other") {
+            const otherEl = document.getElementById(`field_${f.name}_other`);
+            form_data[f.name] = otherEl ? otherEl.value.trim() : "";
+          } else {
             form_data[f.name] =
               f.type === "number" ? Number(el.value) : el.value;
+          }
         });
 
         const btn = document.getElementById("saveBtn");
