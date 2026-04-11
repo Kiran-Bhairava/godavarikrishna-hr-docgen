@@ -258,7 +258,7 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
     to_st     = ParagraphStyle("oto",    fontName="Helvetica-Bold", fontSize=10.5,
                                 leading=13, leftIndent=6, spaceAfter=1)
     name_st   = ParagraphStyle("oname",  fontName="Helvetica-Bold", fontSize=10.5,
-                                leading=13, leftIndent=36, spaceAfter=4)
+                                leading=13, leftIndent=6, spaceAfter=4)
     body_st   = ParagraphStyle("obody",  fontName="Helvetica", fontSize=9.5,
                                 alignment=TA_JUSTIFY, leading=14, leftIndent=6, spaceAfter=7)
     italic_st = ParagraphStyle("oital",  fontName="Helvetica-Oblique", fontSize=9.5,
@@ -333,18 +333,32 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
         f"{ARROW}Nominee Pass Port Size Photo, Aadhaar Card & PAN Card (For the sake of PF & ESI).",
         f"{ARROW}PF service history & PF passbook Statement (Available in UAN Log in).",
     ]
+    # Style for the "IF EXPERIENCED" sub-banner inside the docs table
+    exp_banner_st = ParagraphStyle("expbanner", fontName="Helvetica-Bold", fontSize=7.5,
+                                    alignment=TA_CENTER, textColor=colors.white,
+                                    backColor=colors.HexColor("#1F3864"),
+                                    leading=11, spaceBefore=5, spaceAfter=3)
+
     col2 = [
         f"{ARROW}2 Nationalised Bank Cheques.",
         f"{ARROW}Bank A/C Passbook Xerox (Front Page) or Cancelled Cheque.",
+    ]
+    col2_experienced = [
         f"{ARROW}Previous Employment Offer Letters.",
-        f"{ARROW}Play Slips: Latest 3 Months and Salary Account Statement.",
+        f"{ARROW}Pay Slips: Latest 3 Months and Salary Account Statement.",
         f"{ARROW}Relieving Letter.",
         f"{ARROW}Physical fitness certificate by Govt. physician.",
     ]
 
+    col2_cell = (
+        [Paragraph(i, rq_bd) for i in col2]
+        + [Paragraph("IF EXPERIENCED", exp_banner_st)]
+        + [Paragraph(i, rq_bd) for i in col2_experienced]
+    )
+
     docs_tbl = Table(
         [[Paragraph("<u>Required Documents</u>", rq_th), ""],
-         [[Paragraph(i, rq_bd) for i in col1], [Paragraph(i, rq_bd) for i in col2]]],
+         [[Paragraph(i, rq_bd) for i in col1], col2_cell]],
         colWidths=[CW/2, CW/2], splitByRow=1,
     )
     docs_tbl.setStyle(TableStyle([
@@ -386,8 +400,6 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
         [Paragraph("Grade",          ctr_st), Paragraph(grade,                     ctr_st)],
         [Paragraph("Scale",          ctr_st), Paragraph(d.get("scale",""),         ctr_st)],
         [Paragraph("Department",     ctr_st), Paragraph(d.get("department",""),    ctr_st)],
-        [Paragraph("Gender",         ctr_st), Paragraph(d.get("gender",""),        ctr_st)],
-        [Paragraph("Marital Status", ctr_st), Paragraph(d.get("marital_status",""),ctr_st)],
     ]
     ann1_tbl = Table(ann1, colWidths=[CW*0.35, CW*0.65])
     ann1_tbl.setStyle(TableStyle([
@@ -395,8 +407,6 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
         ("INNERGRID",     (0,0), (-1,-1), 0.4, colors.HexColor("#BDC7E0")),
         ("BACKGROUND",    (0,1), (-1,1),  colors.HexColor("#F4F5F9")),
         ("BACKGROUND",    (0,3), (-1,3),  colors.HexColor("#F4F5F9")),
-        ("BACKGROUND",    (0,5), (-1,5),  colors.HexColor("#F4F5F9")),
-        ("BACKGROUND",    (0,6), (-1,6),  colors.HexColor("#F4F5F9")),
         ("ALIGN",         (0,0), (-1,-1), "CENTER"),
         ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
         ("TOPPADDING",    (0,0), (-1,-1), 3),

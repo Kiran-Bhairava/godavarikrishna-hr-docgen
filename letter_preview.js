@@ -129,8 +129,8 @@ const LetterPreview = (() => {
       .date-line{font-size:10.5pt;font-weight:700;text-align:right;margin-bottom:4pt}
       /* to_st: Helvetica-Bold 10.5pt, leftIndent=6, spaceAfter=1 */
       .to-line{font-size:10.5pt;font-weight:700;margin-bottom:1pt;padding-left:6pt}
-      /* name_st: Helvetica-Bold 10.5pt, leftIndent=36, spaceAfter=4 */
-      .name-line{font-size:10.5pt;font-weight:700;padding-left:36pt;margin-bottom:5pt}
+      /* name_st: Helvetica-Bold 10.5pt, leftIndent=6, spaceAfter=4 — aligns under To, */
+      .name-line{font-size:10.5pt;font-weight:700;padding-left:6pt;margin-bottom:5pt}
       /* body_st: Helvetica 9.5pt, JUSTIFY, leading=14, leftIndent=6, spaceAfter=7 */
       .body-p{
         font-size:9.5pt;line-height:14pt;text-align:justify;
@@ -355,8 +355,9 @@ ${page2Html ? pageTemplate(page2Html, false) : ''}
             <td>
               &#9658; 2 Nationalised Bank Cheques.<br>
               &#9658; Bank A/C Passbook Xerox (Front Page) or Cancelled Cheque.<br>
+              <div style="background:#1F3864;color:#fff;font-size:7.5pt;font-weight:700;text-align:center;padding:2pt 4pt;margin:5pt 0 3pt 0;letter-spacing:.04em;">IF EXPERIENCED</div>
               &#9658; Previous Employment Offer Letters.<br>
-              &#9658; Play Slips: Latest 3 Months and Salary Account Statement.<br>
+              &#9658; Pay Slips: Latest 3 Months and Salary Account Statement.<br>
               &#9658; Relieving Letter.<br>
               &#9658; Physical fitness certificate by Govt. physician.
             </td>
@@ -378,8 +379,6 @@ ${page2Html ? pageTemplate(page2Html, false) : ''}
           <tr><td>Grade</td><td>${grade}</td></tr>
           <tr><td>Scale</td><td>${scale}</td></tr>
           <tr><td>Department</td><td>${d.department || ""}</td></tr>
-          <tr><td>Gender</td><td>${d.gender || ""}</td></tr>
-          <tr><td>Marital Status</td><td>${d.marital_status || ""}</td></tr>
         </tbody>
       </table>
 
