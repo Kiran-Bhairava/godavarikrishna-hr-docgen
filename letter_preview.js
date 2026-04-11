@@ -181,7 +181,7 @@ const LetterPreview = (() => {
       .ann2-table{width:100%;border-collapse:collapse;margin-bottom:4pt;font-size:9pt}
       .ann2-table th{
         background:#87CEEB;color:#1F3864;padding:3pt 6pt;
-        text-align:center;border:0.8pt solid #5AAFD4;font-size:9pt;font-weight:700;
+        text-align:center;border:0.8pt solid #0094da;font-size:9pt;font-weight:700;
       }
       .ann2-table td{
         border:0.8pt solid #BDC7E0;padding:3pt 6pt;
