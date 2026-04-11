@@ -1542,6 +1542,8 @@
         });
         // Always sync full_name from candidateName (single source of truth)
         form_data.full_name = nameEl.value.trim();
+
+        const btn = document.getElementById("saveBtn");
         btn.disabled = true;
         document.getElementById("saveBtnText").textContent = "Saving…";
 
