@@ -356,7 +356,7 @@ ${page2Html ? pageTemplate(page2Html, false) : ''}
               &#9658; 2 Nationalised Bank Cheques.<br>
               &#9658; Bank A/C Passbook Xerox (Front Page) or Cancelled Cheque.<br>
               &#9658; Physical fitness certificate by Govt. physician.<br>
-              <div style="display:inline-block;background:#3D5A8A;color:#fff;font-size:7pt;font-weight:700;text-align:left;padding:1.5pt 6pt;margin:5pt 0 3pt 0;letter-spacing:.05em;">IF EXPERIENCED</div><br>
+              <div style="display:table;background:#3D5A8A;color:#fff;font-size:7.5pt;font-weight:700;padding:2pt 7pt;margin:5pt 0 4pt 0;letter-spacing:.06em;white-space:nowrap;">IF EXPERIENCED</div>
               &#9658; Previous Employment Offer Letters.<br>
               &#9658; Pay Slips: Latest 3 Months and Salary Account Statement.<br>
               &#9658; Relieving Letter.

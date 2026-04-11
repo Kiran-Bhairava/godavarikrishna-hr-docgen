@@ -333,11 +333,35 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
         f"{ARROW}Nominee Pass Port Size Photo, Aadhaar Card & PAN Card (For the sake of PF & ESI).",
         f"{ARROW}PF service history & PF passbook Statement (Available in UAN Log in).",
     ]
-    # Style for the "IF EXPERIENCED" sub-banner — subtle left-aligned tag
-    exp_banner_st = ParagraphStyle("expbanner", fontName="Helvetica-Bold", fontSize=7,
-                                    alignment=TA_LEFT, textColor=colors.white,
-                                    backColor=colors.HexColor("#3D5A8A"),
-                                    leading=10, spaceBefore=5, spaceAfter=3)
+    # "IF EXPERIENCED" banner — compact label that hugs text width (mini Table trick)
+    exp_label_st = ParagraphStyle("explabel", fontName="Helvetica-Bold", fontSize=8,
+                                   alignment=TA_LEFT, textColor=colors.white,
+                                   leading=11, spaceBefore=0, spaceAfter=0)
+
+    def _exp_banner():
+        """Returns a left-aligned compact filled label, width = text only."""
+        inner = Table(
+            [[Paragraph("IF EXPERIENCED", exp_label_st)]],
+            # ~80pt wide — just enough for the text at 8pt bold
+            colWidths=[80],
+        )
+        inner.setStyle(TableStyle([
+            ("BACKGROUND",    (0, 0), (-1, -1), colors.HexColor("#3D5A8A")),
+            ("TOPPADDING",    (0, 0), (-1, -1), 2),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+            ("LEFTPADDING",   (0, 0), (-1, -1), 6),
+            ("RIGHTPADDING",  (0, 0), (-1, -1), 6),
+        ]))
+        # Wrap in a left-aligned outer table so it doesn't stretch full width
+        outer = Table([[inner, ""]], colWidths=[84, None])
+        outer.setStyle(TableStyle([
+            ("TOPPADDING",    (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ("LEFTPADDING",   (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING",  (0, 0), (-1, -1), 0),
+            ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+        ]))
+        return outer
 
     col2 = [
         f"{ARROW}2 Nationalised Bank Cheques.",
@@ -352,7 +376,7 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
 
     col2_cell = (
         [Paragraph(i, rq_bd) for i in col2]
-        + [Paragraph("IF EXPERIENCED", exp_banner_st)]
+        + [_exp_banner()]
         + [Paragraph(i, rq_bd) for i in col2_experienced]
     )
 
