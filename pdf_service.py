@@ -333,21 +333,21 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
         f"{ARROW}Nominee Pass Port Size Photo, Aadhaar Card & PAN Card (For the sake of PF & ESI).",
         f"{ARROW}PF service history & PF passbook Statement (Available in UAN Log in).",
     ]
-    # Style for the "IF EXPERIENCED" sub-banner inside the docs table
-    exp_banner_st = ParagraphStyle("expbanner", fontName="Helvetica-Bold", fontSize=7.5,
-                                    alignment=TA_CENTER, textColor=colors.white,
-                                    backColor=colors.HexColor("#1F3864"),
-                                    leading=11, spaceBefore=5, spaceAfter=3)
+    # Style for the "IF EXPERIENCED" sub-banner — subtle left-aligned tag
+    exp_banner_st = ParagraphStyle("expbanner", fontName="Helvetica-Bold", fontSize=7,
+                                    alignment=TA_LEFT, textColor=colors.white,
+                                    backColor=colors.HexColor("#3D5A8A"),
+                                    leading=10, spaceBefore=5, spaceAfter=3)
 
     col2 = [
         f"{ARROW}2 Nationalised Bank Cheques.",
         f"{ARROW}Bank A/C Passbook Xerox (Front Page) or Cancelled Cheque.",
+        f"{ARROW}Physical fitness certificate by Govt. physician.",
     ]
     col2_experienced = [
         f"{ARROW}Previous Employment Offer Letters.",
         f"{ARROW}Pay Slips: Latest 3 Months and Salary Account Statement.",
         f"{ARROW}Relieving Letter.",
-        f"{ARROW}Physical fitness certificate by Govt. physician.",
     ]
 
     col2_cell = (
@@ -433,7 +433,7 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
     c1=CW*0.42; c2=CW*0.29; c3=CW*0.29
     ann2_tbl = Table(ann2, colWidths=[c1,c2,c3])
     ann2_tbl.setStyle(TableStyle([
-        ("BACKGROUND",    (0,0), (-1,0),  colors.HexColor("#1F3864")),
+        ("BACKGROUND",    (0,0), (-1,0),  colors.HexColor("#3D5A8A")),
         ("TEXTCOLOR",     (0,0), (-1,0),  colors.white),
         ("BACKGROUND",    (0,2), (-1,2),  colors.HexColor("#F4F5F9")),
         ("BACKGROUND",    (0,4), (-1,4),  colors.HexColor("#F4F5F9")),

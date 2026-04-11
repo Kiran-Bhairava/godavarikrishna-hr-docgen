@@ -180,7 +180,7 @@ const LetterPreview = (() => {
 
       .ann2-table{width:100%;border-collapse:collapse;margin-bottom:4pt;font-size:9pt}
       .ann2-table th{
-        background:#1F3864;color:#fff;padding:3pt 6pt;
+        background:#3D5A8A;color:#fff;padding:3pt 6pt;
         text-align:center;border:0.8pt solid #BDC7E0;font-size:9pt;
       }
       .ann2-table td{
@@ -355,11 +355,11 @@ ${page2Html ? pageTemplate(page2Html, false) : ''}
             <td>
               &#9658; 2 Nationalised Bank Cheques.<br>
               &#9658; Bank A/C Passbook Xerox (Front Page) or Cancelled Cheque.<br>
-              <div style="background:#1F3864;color:#fff;font-size:7.5pt;font-weight:700;text-align:center;padding:2pt 4pt;margin:5pt 0 3pt 0;letter-spacing:.04em;">IF EXPERIENCED</div>
+              &#9658; Physical fitness certificate by Govt. physician.<br>
+              <div style="display:inline-block;background:#3D5A8A;color:#fff;font-size:7pt;font-weight:700;text-align:left;padding:1.5pt 6pt;margin:5pt 0 3pt 0;letter-spacing:.05em;">IF EXPERIENCED</div><br>
               &#9658; Previous Employment Offer Letters.<br>
               &#9658; Pay Slips: Latest 3 Months and Salary Account Statement.<br>
-              &#9658; Relieving Letter.<br>
-              &#9658; Physical fitness certificate by Govt. physician.
+              &#9658; Relieving Letter.
             </td>
           </tr>
         </tbody>
