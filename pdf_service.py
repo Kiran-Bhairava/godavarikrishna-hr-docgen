@@ -464,7 +464,7 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
         ("BACKGROUND",    (0,6), (-1,6),  colors.HexColor("#D9E1F2")),
         ("BACKGROUND",    (0,7), (-1,7),  colors.HexColor("#F4F5F9")),
         ("BACKGROUND",    (0,8), (-1,8),  colors.HexColor("#D9E1F2")),
-        ("BOX",           (0,0), (-1,-1), 0.8, colors.HexColor("#1F3864")),
+        ("BOX",           (0,0), (-1,-1), 0.8, colors.HexColor("#5F8CDA")),
         ("INNERGRID",     (0,0), (-1,-1), 0.4, colors.HexColor("#BDC7E0")),
         ("ALIGN",         (0,0), (-1,-1), "CENTER"),
         ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
