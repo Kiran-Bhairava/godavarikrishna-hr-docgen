@@ -695,7 +695,16 @@
               </div>
               <div class="field-wrap candidate-field" id="candidateWrap">
                 <div class="field-label">
-                  Full Name <span class="field-required">*</span>
+                  Full Name
+                  <span
+                    style="
+                      font-weight: 400;
+                      color: var(--muted);
+                      font-size: 12px;
+                    "
+                    >(as per Aadhaar)</span
+                  >
+                  <span class="field-required">*</span>
                 </div>
                 <input
                   type="text"
@@ -878,13 +887,7 @@
           {
             title: "Identity & Role",
             icon: "🪪",
-            fields: [
-              "full_name",
-              "gender",
-              "marital_status",
-              "designation",
-              "department",
-            ],
+            fields: ["gender", "marital_status", "designation", "department"],
           },
           {
             title: "Compensation",
@@ -896,7 +899,7 @@
           {
             title: "Personal Details",
             icon: "🪪",
-            fields: ["full_name", "father_name", "address"],
+            fields: ["father_name", "address"],
           },
           {
             title: "Posting Details",
@@ -929,7 +932,7 @@
           {
             title: "Employee Details",
             icon: "🪪",
-            fields: ["full_name", "designation", "branch", "fy"],
+            fields: ["designation", "branch", "fy"],
           },
           {
             title: "Increment Details",
@@ -946,13 +949,7 @@
           {
             title: "Employee Details",
             icon: "🪪",
-            fields: [
-              "full_name",
-              "current_designation",
-              "new_designation",
-              "branch",
-              "fy",
-            ],
+            fields: ["current_designation", "new_designation", "branch", "fy"],
           },
           {
             title: "Increment Details",
@@ -969,13 +966,7 @@
           {
             title: "Letter Details",
             icon: "📋",
-            fields: [
-              "ref_number",
-              "full_name",
-              "designation",
-              "department",
-              "branch",
-            ],
+            fields: ["ref_number", "designation", "department", "branch"],
           },
           {
             title: "Employment Record",
@@ -1309,7 +1300,10 @@
                 f.type === "number" ? Number(el.value) : el.value;
             }
           });
-          // Auto-fill grade/scale for offer_letter when salary changes
+          // Always sync full_name from candidateName (single source of truth)
+          form_data.full_name = document
+            .getElementById("candidateName")
+            .value.trim();
           if (type.code === "offer_letter") {
             const salaryEl = document.getElementById("field_monthly_salary");
             const gradeEl = document.getElementById("field_grade");
@@ -1543,8 +1537,8 @@
               f.type === "number" ? Number(el.value) : el.value;
           }
         });
-
-        const btn = document.getElementById("saveBtn");
+        // Always sync full_name from candidateName (single source of truth)
+        form_data.full_name = nameEl.value.trim();
         btn.disabled = true;
         document.getElementById("saveBtnText").textContent = "Saving…";
 
