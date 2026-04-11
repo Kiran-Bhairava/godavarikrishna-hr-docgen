@@ -842,11 +842,19 @@
       ];
 
       function lookupGradeScale(salary) {
-        const s = Number(salary) || 0;
+        const s = Math.round(Number(salary) || 0);
         const row = SALARY_GRID.find((r) => s >= r.min && s <= r.max);
         return row
           ? { grade: row.grade, scale: row.scale }
           : { grade: "", scale: "" };
+      }
+
+      function debounce(fn, delay = 300) {
+        let timer;
+        return (...args) => {
+          clearTimeout(timer);
+          timer = setTimeout(() => fn(...args), delay);
+        };
       }
 
       // Alias so _renderField inline handlers work
@@ -1228,6 +1236,29 @@
             });
           });
 
+        // Grade/scale manual override tracking — if user types in these fields
+        // directly, stop auto-filling from salary. Reset when salary changes.
+        const gradeEl = document.getElementById("field_grade");
+        const scaleEl = document.getElementById("field_scale");
+        const salaryEl = document.getElementById("field_monthly_salary");
+        if (gradeEl && scaleEl && salaryEl) {
+          gradeEl.addEventListener("input", () => {
+            const gs = lookupGradeScale(Number(salaryEl.value) || 0);
+            gradeEl.dataset.manualOverride =
+              gradeEl.value !== gs.grade ? "1" : "";
+          });
+          scaleEl.addEventListener("input", () => {
+            const gs = lookupGradeScale(Number(salaryEl.value) || 0);
+            scaleEl.dataset.manualOverride =
+              scaleEl.value !== gs.scale ? "1" : "";
+          });
+          salaryEl.addEventListener("input", () => {
+            // Reset override flags when salary changes so auto-fill resumes
+            gradeEl.dataset.manualOverride = "";
+            scaleEl.dataset.manualOverride = "";
+          });
+        }
+
         updateProgress();
 
         // Show editor
@@ -1285,13 +1316,17 @@
             const scaleEl = document.getElementById("field_scale");
             if (salaryEl && gradeEl && scaleEl) {
               const gs = lookupGradeScale(Number(salaryEl.value) || 0);
-              if (!gradeEl.value) {
+              if (!gradeEl.dataset.manualOverride) {
                 gradeEl.value = gs.grade;
                 form_data.grade = gs.grade;
+              } else {
+                form_data.grade = gradeEl.value;
               }
-              if (!scaleEl.value) {
+              if (!scaleEl.dataset.manualOverride) {
                 scaleEl.value = gs.scale;
                 form_data.scale = gs.scale;
+              } else {
+                form_data.scale = scaleEl.value;
               }
             }
           }
