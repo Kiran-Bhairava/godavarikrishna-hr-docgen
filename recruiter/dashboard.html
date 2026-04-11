@@ -1365,7 +1365,10 @@
         }
 
         // Leftover fields not in any section
-        const leftover = fields.filter((f) => !rendered.has(f.name));
+        // Exclude full_name — it's sourced from the candidateName field above the form
+        const leftover = fields.filter(
+          (f) => !rendered.has(f.name) && f.name !== "full_name",
+        );
         if (leftover.length) {
           html += `<div class="field-section">
             <div class="field-section-title"><span class="section-icon">📌</span>Other Details</div>
