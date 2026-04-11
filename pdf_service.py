@@ -457,7 +457,7 @@ def _build_offer_letter(form_data: dict, date_str: str) -> bytes:
     c1=CW*0.42; c2=CW*0.29; c3=CW*0.29
     ann2_tbl = Table(ann2, colWidths=[c1,c2,c3])
     ann2_tbl.setStyle(TableStyle([
-        ("BACKGROUND",    (0,0), (-1,0),  colors.HexColor("#076591")),
+        ("BACKGROUND",    (0,0), (-1,0),  colors.HexColor("#3D5A8A")),
         ("TEXTCOLOR",     (0,0), (-1,0),  colors.HexColor("#C1D2F0")),
         ("BACKGROUND",    (0,2), (-1,2),  colors.HexColor("#F4F5F9")),
         ("BACKGROUND",    (0,4), (-1,4),  colors.HexColor("#F4F5F9")),
